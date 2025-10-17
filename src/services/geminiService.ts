@@ -191,6 +191,27 @@ const analysisSchema = {
                 }
             },
             required: ['overallRecommendation', 'pros', 'cons', 'actionableSteps', 'chartInsights']
+        },
+        breakEvenAnalysis: {
+            type: Type.OBJECT,
+            description: "An analysis of the buy vs. rent break-even point.",
+            properties: {
+                breakEvenPoint: { type: Type.NUMBER, description: "The number of years it takes for buying to become more financially advantageous than renting." },
+                summary: { type: Type.STRING, description: "A concise, 1-2 sentence summary explaining the break-even point to the user." },
+                assumptions: {
+                    type: Type.OBJECT,
+                    description: "The assumptions used in the break-even calculation.",
+                    properties: {
+                        estimatedRent: { type: Type.NUMBER, description: "Estimated monthly rent for a comparable property in the area." },
+                        appreciationRate: { type: Type.NUMBER, description: "Assumed annual home appreciation rate as a percentage." },
+                        rentIncreaseRate: { type: Type.NUMBER, description: "Assumed annual rent increase rate as a percentage." },
+                        buyingCosts: { type: Type.NUMBER, description: "One-time buying costs (closing costs, etc.) as a percentage of the home price." },
+                        sellingCosts: { type: Type.NUMBER, description: "One-time selling costs (realtor fees, etc.) as a percentage of the home price." }
+                    },
+                    required: ['estimatedRent', 'appreciationRate', 'rentIncreaseRate', 'buyingCosts', 'sellingCosts']
+                }
+            },
+            required: ['breakEvenPoint', 'summary', 'assumptions']
         }
     },
     required: [
@@ -199,7 +220,8 @@ const analysisSchema = {
         'marketAnalysis',
         'locationAnalysis',
         'totalCostOfOwnership',
-        'financialAdvice'
+        'financialAdvice',
+        'breakEvenAnalysis'
     ]
 };
 
@@ -226,8 +248,9 @@ function createPrompt(data: UserInput): string {
         - Identify up to 5 key amenities (like grocery stores, parks, hospitals, transit stops) within a short distance. Provide their name, type, and geographic coordinates.
         - List 3-4 of the best schools nearby. Provide their name, type (Elementary, etc.), a rating out of 10, and their approximate distance from the neighborhood.
     4.  **Calculate Total Cost of Ownership (TCO):** Break down all estimated monthly costs.
-    5.  **Provide a Readiness Score and Financial Advice:** Give an overall readiness score from 1-10. Offer a clear recommendation, outline pros and cons, and list actionable next steps.
-    6.  **Generate Chart Insights:** For each major data visualization, provide a concise, one-sentence summary that explains what the data means for the user specifically.
+    5.  **Calculate Buy vs. Rent Break-Even Point:** Determine the number of years it will take for the financial benefits of owning this home to outweigh the costs of renting a comparable property. To do this, you must make reasonable, localized assumptions for: estimated monthly rent for a comparable property, annual home appreciation rate, annual rent increase rate, one-time buying costs (as a % of home price), and one-time selling costs (as a % of home price). Return the break-even point in years, a summary, and all the assumptions you used.
+    6.  **Provide a Readiness Score and Financial Advice:** Give an overall readiness score from 1-10. Offer a clear recommendation, outline pros and cons, and list actionable next steps.
+    7.  **Generate Chart Insights:** For each major data visualization, provide a concise, one-sentence summary that explains what the data means for the user specifically.
 
     Return your complete analysis as a single JSON object that conforms to the provided schema. Ensure all numerical values are numbers, not strings.
     Base your analysis on current, realistic market data, interest rates, and local conditions for ${data.city}.

@@ -99,6 +99,18 @@ export interface FinancialAdvice {
   };
 }
 
+export interface BreakEvenAnalysis {
+    breakEvenPoint: number; // in years
+    summary: string;
+    assumptions: {
+        estimatedRent: number; // monthly
+        appreciationRate: number; // annual percentage
+        rentIncreaseRate: number; // annual percentage
+        buyingCosts: number; // percentage of home price
+        sellingCosts: number; // percentage of home price
+    };
+}
+
 export interface AnalysisResult {
   personalBuyingReadinessScore: number;
   affordability: AffordabilityAnalysis;
@@ -106,4 +118,5 @@ export interface AnalysisResult {
   locationAnalysis: LocationAnalysis;
   totalCostOfOwnership: TotalCostOfOwnership;
   financialAdvice: FinancialAdvice;
+  breakEvenAnalysis: BreakEvenAnalysis;
 }

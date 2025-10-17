@@ -15,7 +15,7 @@ import NeighborhoodMap from './NeighborhoodMap';
 // Fix: Import from the newly created component file
 import ScenarioSimulator from './ScenarioSimulator';
 // Fix: Import from the newly created component file
-import AmortizationChart from './AmortizationChart';
+import BreakEvenAnalysis from './BreakEvenAnalysis';
 import Modal from './Modal';
 
 // Import calculation utility
@@ -152,7 +152,7 @@ const Results: React.FC<ResultsProps> = ({ isLoading, error, result, userInput }
         );
     }
 
-    const { financialAdvice, affordability, marketAnalysis, locationAnalysis, totalCostOfOwnership, personalBuyingReadinessScore } = displayData;
+    const { financialAdvice, affordability, marketAnalysis, locationAnalysis, totalCostOfOwnership, personalBuyingReadinessScore, breakEvenAnalysis } = displayData;
 
     return (
         <div className="animate-fade-in space-y-8">
@@ -243,11 +243,8 @@ const Results: React.FC<ResultsProps> = ({ isLoading, error, result, userInput }
                     </div>
                 </div>
 
-                <AmortizationChart 
-                    principal={simulatedInput ? simulatedInput.homePrice - simulatedInput.downPayment : userInput.targetHomePrice - userInput.downPayment} 
-                    interestRate={simulatedInput ? simulatedInput.interestRate : marketAnalysis.interestRateForecast[0]?.rate || 5.5} 
-                    loanTerm={30} // Assuming 30 years
-                />
+                {breakEvenAnalysis && <BreakEvenAnalysis data={breakEvenAnalysis} />}
+
             </div>
 
             <Modal isOpen={isMapModalOpen} onClose={() => setMapModalOpen(false)}>
