@@ -1,94 +1,81 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import type { MarketData } from '../types';
+import InfoTooltip from './InfoTooltip';
 
-interface ChartsProps {
+interface MarketForecastChartProps {
   marketData: MarketData;
+  tooltipText?: string;
 }
-
-const ChartCard: React.FC<{ title: string; children: React.ReactNode; source: string }> = ({ title, children, source }) => (
-    <div className="bg-slate-800 p-4 rounded-lg shadow-lg h-72 flex flex-col">
-        <h3 className="text-lg font-semibold text-cyan-400 mb-4">{title}</h3>
-        <div className="flex-grow h-full">
-            {children}
-        </div>
-        <p className="text-xs text-slate-500 mt-2 italic text-right">{source}</p>
-    </div>
-);
 
 const currencyFormatter = (value: number) => {
     if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
     return `$${value}`;
 };
 
-const Charts: React.FC<ChartsProps> = ({ marketData }) => {
-  const sourceText = "*Source: AI-generated model based on local trends";
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-2 border border-slate-200 rounded shadow-lg">
+        <p className="label text-sm font-bold text-slate-700">{`${label}`}</p>
+        <p className="intro text-sm text-cyan-600">{`Price : ${currencyFormatter(payload[0].value)}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
 
-  // Defensive check to ensure marketData and its properties exist before rendering charts
-  if (!marketData) {
+const MarketForecastChart: React.FC<MarketForecastChartProps> = ({ marketData, tooltipText }) => {
+  if (!marketData || !marketData.averageHomePrice || marketData.averageHomePrice.length === 0) {
     return null;
   }
 
+  const chartData = marketData.averageHomePrice;
+  const forecastStartIndex = Math.max(0, chartData.length - 2);
+  const forecastStartQuarter = chartData[forecastStartIndex]?.quarter;
+
+  const historicalData = chartData.slice(0, forecastStartIndex + 1);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {marketData.mortgageRates && marketData.mortgageRates.length > 0 && (
-            <ChartCard title="Local Mortgage Rate Trend" source={sourceText}>
-                <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={marketData.mortgageRates} margin={{ top: 5, right: 20, left: -10, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="month" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" domain={['dataMin - 0.2', 'dataMax + 0.2']} tickFormatter={(value) => `${value.toFixed(1)}%`} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
-                    <Legend />
-                    <Line type="monotone" dataKey="rate" name="Rate" stroke="#22d3ee" strokeWidth={2} activeDot={{ r: 8 }} />
-                </LineChart>
-                </ResponsiveContainer>
-            </ChartCard>
-        )}
-        {marketData.employmentRates && marketData.employmentRates.length > 0 && (
-            <ChartCard title="Local Employment Rate Trend" source={sourceText}>
-                <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={marketData.employmentRates} margin={{ top: 5, right: 20, left: -10, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="month" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" domain={['dataMin - 0.5', 'dataMax + 0.5']} tickFormatter={(value) => `${value.toFixed(1)}%`} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}/>
-                    <Legend />
-                    <Line type="monotone" dataKey="rate" name="Rate" stroke="#a78bfa" strokeWidth={2} activeDot={{ r: 8 }} />
-                </LineChart>
-                </ResponsiveContainer>
-            </ChartCard>
-        )}
-         {marketData.yoyPriceChange && marketData.yoyPriceChange.length > 0 && (
-            <ChartCard title="Local YoY House Price Change (%)" source={sourceText}>
-                <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={marketData.yoyPriceChange} margin={{ top: 5, right: 20, left: -10, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="year" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" tickFormatter={(value) => `${value}%`} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}/>
-                    <Legend />
-                    <Line type="monotone" dataKey="change" name="Change" stroke="#f472b6" strokeWidth={2} activeDot={{ r: 8 }} />
-                </LineChart>
-                </ResponsiveContainer>
-            </ChartCard>
-         )}
-        {marketData.averageHomePrice && marketData.averageHomePrice.length > 0 && (
-            <ChartCard title="Average Home Price Trend (Local)" source={sourceText}>
-                <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={marketData.averageHomePrice} margin={{ top: 5, right: 20, left: -10, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="quarter" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" tickFormatter={currencyFormatter} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} formatter={(value: number) => `$${value.toLocaleString()}`}/>
-                    <Legend />
-                    <Line type="monotone" dataKey="price" name="Price" stroke="#4ade80" strokeWidth={2} activeDot={{ r: 8 }} />
-                </LineChart>
-                </ResponsiveContainer>
-            </ChartCard>
-        )}
+    <div className="flex flex-col flex-grow h-full">
+        <div className="flex justify-center items-center mb-2">
+            <h3 className="font-bold text-center text-slate-700">Average Home Price Forecast</h3>
+            {tooltipText && <InfoTooltip text={tooltipText} />}
+        </div>
+        <div className="flex-grow h-full">
+            <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="quarter" stroke="#64748b" fontSize={12} />
+                <YAxis stroke="#64748b" fontSize={12} tickFormatter={currencyFormatter} />
+                <Tooltip content={<CustomTooltip />} />
+                
+                {/* Historical Data Line */}
+                <Line data={historicalData} type="monotone" dataKey="price" name="Historical Price" stroke="#38bdf8" strokeWidth={3} activeDot={{ r: 8 }} dot={false} />
+                
+                {/* Forecast Data Line */}
+                <Line dataKey="price" name="Forecast Price" stroke="#38bdf8" strokeWidth={3} strokeDasharray="5 5" activeDot={{ r: 8 }} dot={false}/>
+
+                {forecastStartQuarter && <ReferenceLine x={forecastStartQuarter} stroke="#94a3b8" strokeDasharray="3 3" />}
+                
+                 <Legend verticalAlign="bottom" height={36} content={() => (
+                     <div className="flex justify-center items-center gap-6 text-sm text-slate-500 mt-4">
+                        <div className="flex items-center gap-2">
+                             <svg className="w-4 h-1" viewBox="0 0 16 4"><path d="M0 2 H16" stroke="#38bdf8" strokeWidth="3" /></svg>
+                            <span>Historical</span>
+                        </div>
+                         <div className="flex items-center gap-2">
+                             <svg className="w-4 h-1" viewBox="0 0 16 4"><path d="M0 2 H16" stroke="#38bdf8" strokeWidth="3" strokeDasharray="5 5" /></svg>
+                            <span>Forecast</span>
+                        </div>
+                    </div>
+                 )} />
+
+            </LineChart>
+            </ResponsiveContainer>
+        </div>
     </div>
   );
 };
 
-export default Charts;
+export default MarketForecastChart;

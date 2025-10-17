@@ -10,17 +10,18 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, isLoading }) => {
   const [formData, setFormData] = useState<UserInput>({
     income: 80000,
     downPayment: 50000,
-    creditScore: 740,
+    creditScore: 'Good (720-799)',
     monthlyDebt: 500,
     postalCode: 'M5V 2T6',
     city: 'Toronto',
     loanType: '30-Year Fixed',
     targetHomePrice: 450000,
+    workAddress: '123 Main St, Toronto',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name.match(/postalCode|city|loanType/) ? value : Number(value) }));
+    setFormData(prev => ({ ...prev, [name]: name.match(/income|downPayment|monthlyDebt|targetHomePrice/) ? Number(value) : value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -54,8 +55,13 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, isLoading }) => {
         </div>
         <div>
           <label htmlFor="creditScore" className="block text-sm font-medium text-slate-300">Estimated Credit Score</label>
-          <input type="number" name="creditScore" id="creditScore" value={formData.creditScore} onChange={handleChange} className="mt-1 block w-full bg-slate-700 border-slate-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-cyan-500 focus:border-cyan-500" min="300" max="900" placeholder="300-900" />
-          <p className="text-xs text-slate-400 mt-1">(Your credit score, typically between 300 and 900. A higher score helps get better loan rates)</p>
+          <select name="creditScore" id="creditScore" value={formData.creditScore} onChange={handleChange} className="mt-1 block w-full bg-slate-700 border-slate-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-cyan-500 focus:border-cyan-500">
+            <option>Excellent (800+)</option>
+            <option>Good (720-799)</option>
+            <option>Fair (650-719)</option>
+            <option>Poor (&lt;650)</option>
+          </select>
+          <p className="text-xs text-slate-400 mt-1">(Select the range that best describes your credit score. A higher score helps get better loan rates)</p>
         </div>
         <div>
           <label htmlFor="city" className="block text-sm font-medium text-slate-300">Desired City/Town</label>
@@ -66,6 +72,11 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, isLoading }) => {
           <label htmlFor="postalCode" className="block text-sm font-medium text-slate-300">Desired Postal Code</label>
            <input type="text" name="postalCode" id="postalCode" value={formData.postalCode} onChange={handleChange} className="mt-1 block w-full bg-slate-700 border-slate-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-cyan-500 focus:border-cyan-500" placeholder="e.g., M5V 2T6" />
            <p className="text-xs text-slate-400 mt-1">(The 6-character postal code of the specific area you're interested in)</p>
+        </div>
+         <div>
+          <label htmlFor="workAddress" className="block text-sm font-medium text-slate-300">Work Address (Optional)</label>
+           <input type="text" name="workAddress" id="workAddress" value={formData.workAddress} onChange={handleChange} className="mt-1 block w-full bg-slate-700 border-slate-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-cyan-500 focus:border-cyan-500" placeholder="e.g., 123 Main St, Toronto" />
+           <p className="text-xs text-slate-400 mt-1">(Providing this helps us analyze your potential commute)</p>
         </div>
         <div>
           <label htmlFor="loanType" className="block text-sm font-medium text-slate-300">Loan Type</label>

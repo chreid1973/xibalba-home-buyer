@@ -1,125 +1,89 @@
 import React, { useState } from 'react';
+import type { UserInput, AnalysisResult } from './src/types';
+import { getAIAnalysis } from './src/services/geminiService';
+
 import Header from './components/Header';
+import Hero from './components/Hero';
 import InputForm from './components/InputForm';
-import Charts from './components/Charts';
 import Results from './components/Results';
 import Footer from './components/Footer';
-import { getHousingAdvice, getUpdatedPersonalizedAdvice, startChatSession } from './src/services/geminiService';
-import type { UserInput, AnalysisResult, MarketData, ChatMessage, PersonalizedAdvice } from './src/types';
-import type { Chat } from '@google/genai';
 
 const App: React.FC = () => {
+  const [view, setView] = useState<'hero' | 'form' | 'results'>('hero');
   const [userInput, setUserInput] = useState<UserInput | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [marketData, setMarketData] = useState<MarketData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Chat State
-  const [chat, setChat] = useState<Chat | null>(null);
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-  const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
+  const handleStartAnalysis = () => setView('form');
 
+  const handleNewAnalysis = () => {
+    setView('form');
+    setAnalysisResult(null);
+    setUserInput(null);
+    setError(null);
+  };
 
-  const handleAnalysis = async (input: UserInput) => {
+  const handleAnalyze = async (data: UserInput) => {
     setIsLoading(true);
     setError(null);
-    setAnalysisResult(null);
-    setMarketData(null);
-    setChat(null);
-    setChatHistory([]);
-    setUserInput(input);
+    setUserInput(data);
+    setView('results');
 
     try {
-      const result = await getHousingAdvice(input);
+      const result = await getAIAnalysis(data);
       setAnalysisResult(result);
-      setMarketData(result.marketData);
-      
-      // Start a new chat session with the analysis context
-      const chatSession = await startChatSession(result);
-      setChat(chatSession);
-
-    } catch (err) {
-      console.error(err);
-      setError('An error occurred while fetching the analysis. Please try again.');
+    } catch (e) {
+      console.error(e);
+      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+      setError(`An error occurred while analyzing your data. Please try again. Details: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleUpdateAdvice = async (updatedFinances: Partial<UserInput>) => {
-    if (!userInput || !analysisResult) return;
-    
-    setIsLoading(true); // Reuse main loading indicator for simplicity
-    setError(null);
-
-    const updatedUserInput = { ...userInput, ...updatedFinances };
-    setUserInput(updatedUserInput);
-
-    try {
-      const updatedAdvice = await getUpdatedPersonalizedAdvice(
-        updatedUserInput,
-        analysisResult.locationAnalysis,
-        analysisResult.marketData
-      );
-      // Update only the personalized advice part of the result
-      setAnalysisResult(prevResult => prevResult ? { ...prevResult, personalizedAdvice: updatedAdvice } : null);
-
-    } catch (err) {
-      console.error(err);
-      setError('An error occurred while updating the analysis. Please try again.');
-    } finally {
-      setIsLoading(false);
+  
+  const renderContent = () => {
+    switch (view) {
+      case 'hero':
+        return <Hero onStartAnalysis={handleStartAnalysis} />;
+      case 'form':
+        return (
+           <div className="max-w-4xl mx-auto animate-fade-in">
+             <div className="grid md:grid-cols-2 gap-8 items-start">
+                <div className="md:col-span-1">
+                    <InputForm onAnalyze={handleAnalyze} isLoading={isLoading} />
+                </div>
+                <div className="md:col-span-1 text-slate-300 p-6 bg-slate-800/50 rounded-lg hidden md:block">
+                    <h3 className="text-xl font-bold text-cyan-400 mb-4">How It Works</h3>
+                    <p className="text-slate-400 mb-4">
+                        This tool leverages generative AI to provide a comprehensive home buying analysis. Simply provide your financial details and location preferences.
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 text-slate-400">
+                      <li><span className="font-semibold text-slate-300">Personal Finances:</span> We assess your income, debt, and savings to determine what you can realistically afford.</li>
+                      <li><span className="font-semibold text-slate-300">Market Conditions:</span> We analyze current and forecasted real estate trends in your desired area.</li>
+                      <li><span className="font-semibold text-slate-300">Location Score:</span> We evaluate key neighborhood metrics like safety, schools, and amenities.</li>
+                      <li><span className="font-semibold text-slate-300">Actionable Advice:</span> We synthesize all this data into clear, actionable recommendations to guide your decision.</li>
+                    </ul>
+                </div>
+            </div>
+           </div>
+        );
+      case 'results':
+        return <Results isLoading={isLoading} error={error} result={analysisResult} userInput={userInput} />;
+      default:
+        return <Hero onStartAnalysis={handleStartAnalysis} />;
     }
   };
-
-  const handleSendMessage = async (message: string) => {
-    if (!chat) return;
-
-    const userMessage: ChatMessage = { role: 'user', content: message };
-    setChatHistory(prev => [...prev, userMessage]);
-    setIsChatLoading(true);
-
-    try {
-      const response = await chat.sendMessage({ message });
-      const modelMessage: ChatMessage = { role: 'model', content: response.text };
-      setChatHistory(prev => [...prev, modelMessage]);
-    } catch (err) {
-       console.error(err);
-       const errorMessage: ChatMessage = { role: 'model', content: 'Sorry, I encountered an error. Please try again.' };
-       setChatHistory(prev => [...prev, errorMessage]);
-    } finally {
-      setIsChatLoading(false);
-    }
-  };
-
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white font-sans">
-      <Header />
+    <div className="bg-slate-900 text-white min-h-screen font-sans antialiased">
+      <Header showNewAnalysisButton={view === 'results'} onNewAnalysis={handleNewAnalysis} />
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-8">
-          <div className="lg:col-span-2">
-             <InputForm onAnalyze={handleAnalysis} isLoading={isLoading} />
-          </div>
-          <div className="lg:col-span-3">
-            {marketData && <Charts marketData={marketData} />}
-            <Results 
-              result={analysisResult} 
-              isLoading={isLoading} 
-              error={error}
-              onUpdateAdvice={handleUpdateAdvice}
-              chatHistory={chatHistory}
-              isChatLoading={isChatLoading}
-              onSendMessage={handleSendMessage}
-              initialUserInput={userInput}
-            />
-          </div>
-        </div>
+        {renderContent()}
       </main>
       <Footer />
     </div>
   );
-};
+}
 
 export default App;
