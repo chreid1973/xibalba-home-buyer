@@ -56,7 +56,7 @@ const App: React.FC = () => {
                 <div className="md:col-span-1 text-slate-300 p-6 bg-slate-800/50 rounded-lg hidden md:block">
                     <h3 className="text-xl font-bold text-cyan-400 mb-4">How It Works</h3>
                     <p className="text-slate-400 mb-4">
-                        This tool leverages generative AI to provide a comprehensive home buying analysis. Simply provide your financial details and location preferences.
+                        Unlock expert-level insights for your home buying journey. Our AI co-pilot synthesizes complex financial data and real-time market trends into a clear, personalized strategy, empowering you to make a confident and informed decision.
                     </p>
                     <ul className="list-disc list-inside space-y-2 text-slate-400">
                       <li><span className="font-semibold text-slate-300">Personal Finances:</span> We assess your income, debt, and savings to determine what you can realistically afford.</li>
