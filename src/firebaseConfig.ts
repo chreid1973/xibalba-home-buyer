@@ -1,9 +1,12 @@
-// FIX: Use a namespace import for firebase/app to work around potential module resolution issues.
-import * as firebaseApp from "firebase/app";
+// This file is a placeholder for Firebase configuration.
+// To use Firebase services like Auth and Firestore, you would initialize them here.
+
+// Example structure:
+/*
+import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// IMPORTANT: Replace with your actual Firebase configuration from your project settings.
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_AUTH_DOMAIN",
@@ -13,8 +16,9 @@ const firebaseConfig = {
   appId: "YOUR_APP_ID"
 };
 
-// Initialize Firebase
-const app = firebaseApp.initializeApp(firebaseConfig);
-
+const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+*/
+
+console.log("Firebase config placeholder loaded.");

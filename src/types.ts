@@ -1,132 +1,64 @@
 export interface UserInput {
-  income: number;
+  propertyPrice: number;
   downPayment: number;
-  creditScore: string;
-  monthlyDebt: number;
-  postalCode: string;
-  city: string;
-  loanType: string;
-  targetHomePrice: number;
-  workAddress?: string;
-}
-
-interface ScoreDetail {
-  score: number;
-  summary: string;
-}
-
-interface Amenity {
-  name: string;
-  type: 'Grocery' | 'Park' | 'Hospital' | 'Transit' | 'Restaurant' | 'Cafe';
-  lat: number;
-  lon: number;
-}
-
-interface School {
-  name: string;
-  rating: number;
-  type: 'Elementary' | 'Middle' | 'High';
-  distance: string;
-  address: string;
-  city: string;
+  interestRate: number;
+  loanTerm: number; // in years
+  annualIncome: number;
+  monthlyDebts: number;
+  propertyLocation: string;
+  workLocation: string;
 }
 
 export interface AnalysisResult {
-  id?: string;
-  savedAt?: string;
-  userInput: UserInput;
-
-  personalBuyingReadinessScore: number;
-
-  affordability: {
-    maxAffordableHomePrice: number;
-    monthlyPITH: number;
-    tdsRatio: number;
-    recommendations: string[];
-    priceToIncomeRatio: {
-      user: number;
-      cityAverage: number;
-      summary: string;
-    };
-  };
-
-  marketAnalysis: {
-    dataSource: string;
-    averageHomePrice: { quarter: string; price: number }[];
-    marketHealthIndex: number;
-    forecastSummary: string;
-    interestRateForecast: { quarter: string; rate: number }[];
-    inventoryLevels: { quarter: string; level: number }[];
-  };
-
-  locationAnalysis: {
-    dataSources: {
-      scores: string;
-      schools: string;
-      amenities: string;
-    };
-    scores: {
-      affordability: ScoreDetail;
-      jobMarket: ScoreDetail;
-      safety: ScoreDetail;
-      schools: ScoreDetail;
-      amenities: ScoreDetail;
-    };
-    overallSummary: string;
-    overallLocationScore: number;
-    commuteAnalysis?: {
-      time: number;
-      score: number;
-      summary: string;
-    };
-    neighborhoodCoords: {
-      lat: number;
-      lon: number;
-    };
-    amenities: Amenity[];
-    topSchools: School[];
-  };
-
-  totalCostOfOwnership: {
-    totalMonthlyCost: number;
-    principalAndInterest: number;
-    estimatedTaxes: number;
-    estimatedInsurance: number;
-    estimatedUtilities: number;
-    estimatedMaintenance: number;
-  };
-
-  financialAdvice: {
-    overallRecommendation: string;
+  verdict: {
+    decision: 'good' | 'borderline' | 'bad';
+    summary: string;
     pros: string[];
     cons: string[];
-    actionableSteps: string[];
-    chartInsights: {
-      readinessGauge: string;
-      ownershipCost: string;
-      locationRadar: string;
-      homePriceForecast: string;
-      interestRateForecast: string;
-      inventoryLevels: string;
-    };
   };
-  
-  breakEvenAnalysis: {
-    breakEvenPoint: number;
-    summary: string;
-    assumptions: {
-      estimatedRent: number;
-      appreciationRate: number;
-      rentIncreaseRate: number;
-      buyingCosts: number;
-      sellingCosts: number;
-    };
+  marketAnalysis: {
+    trend: 'up' | 'down' | 'stable';
+    sentiment: number; // 0 to 100
+    narrative: string;
   };
-  
-  methodology: {
-      readinessScore: string;
-      affordability: string;
-      totalCostOfOwnership: string;
-      breakEvenAnalysis: string;
+  affordability: {
+    monthlyPayment: number;
+    dtiRatio: number; // Debt-to-Income
+    affordabilityIndex: number; // 0 to 100
+    narrative: string;
+  };
+  ownershipCost: {
+    principalAndInterest: number;
+    propertyTax: number;
+    homeInsurance: number;
+    maintenance: number;
+    totalMonthlyCost: number;
+  };
+  breakEven: {
+    years: number;
+    narrative: string;
+  };
+  commute: {
+    time: number; // in minutes
+    distance: number; // in miles
+    narrative: string;
+  };
+  locationScore: {
+    schools: number; // 0-10
+    crime: number; // 0-10
+    amenities: number; // 0-10
+    overall: number; // 0-10
+    narrative: string;
+  };
+}
+
+export interface GroundingChunk {
+  web?: {
+    uri: string;
+    title: string;
+  };
+  retrievedContext?: {
+    uri: string;
+    title: string;
   };
 }

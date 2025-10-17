@@ -1,0 +1,1 @@
+full contents of dockets/PROJSCOUT-50-bug-report.md

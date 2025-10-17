@@ -1,34 +1,48 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { GroundingChunk } from '../src/types';
 
 interface CitationProps {
-  title: string;
-  content: string;
-  isDarkTheme?: boolean;
+    citations: GroundingChunk[];
 }
 
-const Citation: React.FC<CitationProps> = ({ title, content, isDarkTheme = false }) => {
-  if (!content) {
-    return null;
-  }
+const Citation: React.FC<CitationProps> = ({ citations }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    
+    const validCitations = citations.filter(c => c.web && c.web.uri && c.web.title);
 
-  const tooltipBg = isDarkTheme ? 'bg-slate-900 border-purple-500/20' : 'bg-white border-slate-200';
-  const tooltipText = isDarkTheme ? 'text-slate-200' : 'text-slate-700';
-  const iconColor = isDarkTheme ? 'text-slate-400' : 'text-slate-400';
+    if (validCitations.length === 0) {
+        return null;
+    }
 
-  return (
-    <div className="group relative inline-flex items-center ml-2">
-      <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${iconColor} cursor-pointer`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <div className={`absolute bottom-full mb-2 w-72 ${tooltipBg} ${tooltipText} text-xs rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20 shadow-xl border left-1/2 -translate-x-1/2`}>
-        <h4 className="font-bold mb-1">{title}</h4>
-        <p>{content}</p>
-        <svg className={`absolute h-2 w-full left-0 top-full ${isDarkTheme ? 'text-slate-900' : 'text-white'}`} x="0px" y="0px" viewBox="0 0 255 255" xmlSpace="preserve">
-          <polygon className="fill-current" points="0,0 127.5,127.5 255,0"/>
-        </svg>
-      </div>
-    </div>
-  );
+    return (
+        <div className="bg-slate-800 rounded-lg p-4 mt-8">
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full text-left font-semibold text-cyan-400 flex justify-between items-center"
+            >
+                <span>Sources used in this analysis</span>
+                <svg className={`w-5 h-5 transform transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            {isOpen && (
+                <div className="mt-4 border-t border-slate-700 pt-4">
+                    <ul className="space-y-2">
+                        {validCitations.map((citation, index) => (
+                           <li key={index} className="text-sm">
+                                <a 
+                                    href={citation.web!.uri} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-slate-300 hover:text-cyan-400 transition-colors"
+                                >
+                                    {citation.web!.title || 'Untitled Source'}
+                                </a>
+                           </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default Citation;

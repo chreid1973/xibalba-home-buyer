@@ -1,43 +1,41 @@
 import React from 'react';
-import type { AnalysisResult } from '../../src/types';
-import Citation from './Citation';
+import { AnalysisResult } from '../src/types';
 
 interface LocationRadarChartProps {
-  scores: AnalysisResult['locationAnalysis']['scores'];
-  dataSource: string;
+  locationScore: AnalysisResult['locationScore'];
 }
 
-const LocationRadarChart: React.FC<LocationRadarChartProps> = ({ scores, dataSource }) => {
-    const scoreData = [
-        { name: 'Affordability', value: scores.affordability.score },
-        { name: 'Job Market', value: scores.jobMarket.score },
-        { name: 'Safety', value: scores.safety.score },
-        { name: 'Schools', value: scores.schools.score },
-        { name: 'Amenities', value: scores.amenities.score },
-    ];
+const LocationRadarChart: React.FC<LocationRadarChartProps> = ({ locationScore }) => {
+  const scores = [
+    { label: 'Schools', value: locationScore.schools },
+    { label: 'Crime Safety', value: locationScore.crime },
+    { label: 'Amenities', value: locationScore.amenities },
+  ];
 
-    return (
-        <div className="text-center">
-            <h4 className="font-bold text-purple-400 mb-4 flex items-center justify-center">
-                Location Attractiveness
-                <Citation title="Data Source" content={dataSource} isDarkTheme={true} />
-            </h4>
-            <div className="p-4 bg-slate-900/50 rounded-lg">
-                <p className="text-xs text-slate-400 mb-2">Each category is scored from 1 to 10.</p>
-                <div className="space-y-3">
-                    {scoreData.map(item => (
-                        <div key={item.name} className="flex items-center">
-                            <span className="text-sm text-slate-300 w-28 text-left">{item.name}</span>
-                            <div className="w-full bg-slate-700 rounded-full h-2.5">
-                                <div className="bg-purple-500 h-2.5 rounded-full" style={{ width: `${item.value * 10}%` }}></div>
-                            </div>
-                            <span className="text-sm font-semibold text-white w-10 text-right">{item.value.toFixed(1)}</span>
-                        </div>
-                    ))}
-                </div>
+  return (
+    <div className="h-full flex flex-col justify-between">
+      <div>
+        <div className="space-y-4">
+          {scores.map(score => (
+            <div key={score.label}>
+              <div className="flex justify-between mb-1 text-sm">
+                <span className="text-slate-300">{score.label}</span>
+                <span className="text-white font-semibold">{score.value} / 10</span>
+              </div>
+              <div className="w-full bg-slate-700 rounded-full h-2.5">
+                <div className="bg-cyan-500 h-2.5 rounded-full" style={{ width: `${score.value * 10}%` }}></div>
+              </div>
             </div>
+          ))}
         </div>
-    );
+        <div className="mt-6 pt-4 border-t border-slate-700 text-center">
+            <p className="text-slate-300">Overall Location Score</p>
+            <p className="text-4xl font-bold text-white mt-1">{locationScore.overall.toFixed(1)}<span className="text-2xl">/10</span></p>
+        </div>
+      </div>
+       <p className="text-slate-300 text-sm mt-4 text-center">{locationScore.narrative}</p>
+    </div>
+  );
 };
 
 export default LocationRadarChart;

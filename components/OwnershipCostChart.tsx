@@ -1,57 +1,58 @@
 import React from 'react';
-import type { AnalysisResult } from '../../src/types';
-import InfoTooltip from './InfoTooltip';
+import { AnalysisResult } from '../src/types';
 
 interface OwnershipCostChartProps {
-    tco: AnalysisResult['totalCostOfOwnership'];
-    pith: number;
-    methodology: string;
+  ownershipCost: AnalysisResult['ownershipCost'];
 }
 
-const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
 
-const OwnershipCostChart: React.FC<OwnershipCostChartProps> = ({ tco, pith, methodology }) => {
-    const chartData = [
-        { name: 'Principal & Interest', value: tco.principalAndInterest, fill: '#8b5cf6' },
-        { name: 'Taxes', value: tco.estimatedTaxes, fill: '#a78bfa' },
-        { name: 'Insurance', value: tco.estimatedInsurance, fill: '#c084fc' },
-        { name: 'Utilities', value: tco.estimatedUtilities, fill: '#e9d5ff' },
-        { name: 'Maintenance', value: tco.estimatedMaintenance, fill: '#f3e8ff' },
-    ];
-    
-    return (
-        <div>
-            <h4 className="font-bold text-purple-400 text-center mb-1 flex items-center justify-center">
-                Estimated Monthly Cost
-                 <InfoTooltip text="This chart breaks down the total estimated monthly cost of owning the target home." methodology={methodology} />
-            </h4>
-             <p className="text-center text-3xl font-bold text-white mb-4">{currencyFormatter.format(tco.totalMonthlyCost)}</p>
-            <div className="w-full flex h-8 rounded-lg overflow-hidden bg-slate-700">
-                {chartData.map(item => (
-                    <div
-                        key={item.name}
-                        className="group relative h-full"
-                        style={{ width: `${(item.value / tco.totalMonthlyCost) * 100}%`, backgroundColor: item.fill }}
-                    >
-                         <div className="absolute bottom-full mb-2 w-48 bg-slate-800 text-slate-200 text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 left-1/2 -translate-x-1/2">
-                            {item.name}: {currencyFormatter.format(item.value)}
-                            <svg className="absolute h-2 w-full left-0 top-full text-slate-800" x="0px" y="0px" viewBox="0 0 255 255" xmlSpace="preserve">
-                                <polygon className="fill-current" points="0,0 127.5,127.5 255,0"/>
-                            </svg>
-                        </div>
-                    </div>
-                ))}
+const OwnershipCostChart: React.FC<OwnershipCostChartProps> = ({ ownershipCost }) => {
+  const costs = [
+    { label: 'Principal & Interest', value: ownershipCost.principalAndInterest, color: 'bg-cyan-500' },
+    { label: 'Property Tax', value: ownershipCost.propertyTax, color: 'bg-indigo-500' },
+    { label: 'Home Insurance', value: ownershipCost.homeInsurance, color: 'bg-purple-500' },
+    { label: 'Maintenance', value: ownershipCost.maintenance, color: 'bg-pink-500' },
+  ];
+  
+  const total = ownershipCost.totalMonthlyCost;
+
+  return (
+    <div>
+      <div className="w-full bg-slate-700 rounded-full h-8 flex overflow-hidden mb-4">
+        {costs.map((cost) => (
+          <div
+            key={cost.label}
+            className={`${cost.color}`}
+            style={{ width: `${(cost.value / total) * 100}%` }}
+            title={`${cost.label}: ${formatCurrency(cost.value)}`}
+          ></div>
+        ))}
+      </div>
+      <div className="space-y-2">
+        {costs.map(cost => (
+            <div key={cost.label} className="flex justify-between items-center text-sm">
+                <div className="flex items-center">
+                    <span className={`w-3 h-3 rounded-full mr-2 ${cost.color}`}></span>
+                    <span className="text-slate-300">{cost.label}</span>
+                </div>
+                <span className="font-semibold text-white">{formatCurrency(cost.value)}</span>
             </div>
-             <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2">
-                {chartData.map(item => (
-                    <div key={item.name} className="flex items-center text-xs">
-                        <span className="w-3 h-3 rounded-sm mr-2" style={{ backgroundColor: item.fill }}></span>
-                        <span className="text-slate-300">{item.name}</span>
-                    </div>
-                ))}
-            </div>
+        ))}
+        <div className="flex justify-between items-center text-lg pt-2 border-t border-slate-700">
+            <span className="font-bold text-cyan-400">Total Monthly Cost</span>
+            <span className="font-bold text-cyan-400">{formatCurrency(total)}</span>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default OwnershipCostChart;

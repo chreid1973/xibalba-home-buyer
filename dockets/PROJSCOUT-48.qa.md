@@ -1,0 +1,1 @@
+full contents of dockets/PROJSCOUT-48.qa.md

@@ -1,42 +1,19 @@
 import React from 'react';
-import UserMenu from './UserMenu';
-// FIX: Corrected import path
-import type { AppUser } from '../src/services/authService';
 
 interface HeaderProps {
-  user: AppUser | null;
-  onLoginClick: () => void;
-  onLogout: () => void;
-  onShowDashboard: () => void;
+  onReset: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, onLoginClick, onLogout, onShowDashboard }) => {
+const Header: React.FC<HeaderProps> = ({ onReset }) => {
   return (
-    <header className="py-4 px-6 md:px-12 flex justify-between items-center bg-transparent backdrop-blur-sm sticky top-0 z-40 border-b border-purple-500/10">
-      <div className="flex items-center">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
-            <path d="M12 2L2 7V21H22V7L12 2Z" fill="url(#logo-gradient-header)"/>
-            <defs>
-                <linearGradient id="logo-gradient-header" x1="2" y1="2" x2="22" y2="21" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#a855f7"/>
-                    <stop offset="1" stopColor="#3b82f6"/>
-                </linearGradient>
-            </defs>
-        </svg>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Property Scout</h1>
+    <header className="bg-slate-800/50 backdrop-blur-sm sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+        <div className="flex items-center space-x-3 cursor-pointer" onClick={onReset}>
+          <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+          <h1 className="text-2xl font-bold text-white">RealtyAnalyst AI</h1>
+        </div>
+        {/* Placeholder for UserMenu or other actions */}
       </div>
-      <nav>
-        {user ? (
-          <UserMenu userEmail={user.email!} onLogout={onLogout} onShowDashboard={onShowDashboard} />
-        ) : (
-          <button 
-            onClick={onLoginClick}
-            className="bg-purple-600/50 hover:bg-purple-600 text-white font-semibold py-2 px-5 rounded-lg transition-all duration-300 transform hover:scale-105"
-          >
-            Login
-          </button>
-        )}
-      </nav>
     </header>
   );
 };

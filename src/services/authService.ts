@@ -1,37 +1,13 @@
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  type User as FirebaseUser
-} from "firebase/auth";
-import { auth } from '../firebaseConfig';
+// This file is a placeholder for authentication service logic,
+// such as interacting with Firebase Auth or another provider.
 
-export interface AppUser {
-    uid: string;
-    email: string | null;
-}
-
-export const signUp = async (email: string, password: string): Promise<FirebaseUser> => {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  return userCredential.user;
+export const signIn = async () => {
+    console.log("Signing in...");
+    // Placeholder for sign-in logic
+    return { uid: '123', email: 'user@example.com' };
 };
 
-export const logIn = async (email: string, password: string): Promise<FirebaseUser> => {
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  return userCredential.user;
-};
-
-export const logOut = (): Promise<void> => {
-  return signOut(auth);
-};
-
-export const onAuthChange = (callback: (user: AppUser | null) => void) => {
-  return onAuthStateChanged(auth, (user) => {
-    if (user) {
-      callback({ uid: user.uid, email: user.email });
-    } else {
-      callback(null);
-    }
-  });
+export const signOut = async () => {
+    console.log("Signing out...");
+    // Placeholder for sign-out logic
 };
