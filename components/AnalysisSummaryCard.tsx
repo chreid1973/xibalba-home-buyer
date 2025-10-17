@@ -1,82 +1,48 @@
 
 import React from 'react';
+// FIX: Corrected import path for types.
 import type { AnalysisResult } from '../src/types';
 
 interface AnalysisSummaryCardProps {
-  analysis: AnalysisResult;
-  onView: (analysis: AnalysisResult) => void;
-  onDelete: (analysisId: string) => void;
-  onSelect: (analysisId: string) => void;
-  isSelected: boolean;
+    analysis: AnalysisResult;
+    onSelect: () => void;
+    onDelete: () => void;
+    onCompare: () => void;
+    isDeleting: boolean;
+    isSelectedForCompare?: boolean;
 }
 
-const getRecommendationStyle = (recommendation: string): { color: string, text: string } => {
-    const lowerRec = recommendation.toLowerCase();
-    if (lowerRec.includes('good') || lowerRec.includes('proceed')) {
-        return { color: 'bg-green-500/20 text-green-300 border-green-500/30', text: 'Good to Buy' };
-    }
-    if (lowerRec.includes('caution')) {
-        return { color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', text: 'Caution' };
-    }
-    if (lowerRec.includes('strengthen') || lowerRec.includes('wait')) {
-        return { color: 'bg-red-500/20 text-red-300 border-red-500/30', text: 'Strengthen Finances' };
-    }
-    return { color: 'bg-sky-500/20 text-sky-300 border-sky-500/30', text: 'Advice' };
-};
+const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-
-const AnalysisSummaryCard: React.FC<AnalysisSummaryCardProps> = ({ analysis, onView, onDelete, onSelect, isSelected }) => {
-    const { userInput, personalBuyingReadinessScore, financialAdvice, savedAt, id } = analysis;
-    const recommendationStyle = getRecommendationStyle(financialAdvice.overallRecommendation);
+const AnalysisSummaryCard: React.FC<AnalysisSummaryCardProps> = ({ analysis, onSelect, onDelete, onCompare, isDeleting, isSelectedForCompare }) => {
+    const { userInput, personalBuyingReadinessScore, savedAt } = analysis;
 
     return (
-        <div className={`bg-black/20 border rounded-lg shadow-lg p-6 flex flex-col justify-between h-full transition-all duration-300 ${isSelected ? 'border-blue-500 shadow-blue-500/20' : 'border-purple-500/10 hover:border-purple-500/30 hover:shadow-purple-500/10'}`}>
-            <div>
-                 <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center">
-                        <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => onSelect(id)}
-                            className="h-5 w-5 rounded bg-slate-700 border-slate-600 text-blue-500 focus:ring-blue-600 focus:ring-2"
-                        />
-                        <div className="ml-3">
-                           <h3 className="text-xl font-bold text-white">{userInput.city}, {userInput.postalCode}</h3>
-                           <p className="text-sm text-slate-400">Saved on {new Date(savedAt).toLocaleDateString()}</p>
-                        </div>
-                    </div>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${recommendationStyle.color}`}>
-                        {recommendationStyle.text}
-                    </span>
+        <div className={`bg-slate-800/50 p-4 rounded-lg border ${isSelectedForCompare ? 'border-purple-500 ring-2 ring-purple-500/50' : 'border-purple-500/10'} hover:border-purple-500/30 transition-all duration-300`}>
+            <div className="flex justify-between items-start">
+                <div>
+                    <h3 className="font-bold text-lg text-white">{userInput.city}, {userInput.postalCode}</h3>
+                    <p className="text-sm text-slate-400">
+                        Target Price: {currencyFormatter.format(userInput.targetHomePrice)}
+                    </p>
+                    {savedAt && (
+                         <p className="text-xs text-slate-500 mt-1">
+                            Saved on: {new Date(savedAt).toLocaleDateString()}
+                        </p>
+                    )}
+                </div>
+                <div className="text-right flex-shrink-0 ml-4">
+                    <p className="text-xs text-purple-300">Readiness</p>
+                    <p className="text-2xl font-bold text-white">{personalBuyingReadinessScore.toFixed(1)}/10</p>
                 </div>
             </div>
-            
-            <div className="my-6 space-y-3">
-                <div className="flex justify-between items-baseline">
-                    <span className="text-slate-400">Target Price:</span>
-                    <span className="text-xl font-bold text-white">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(userInput.targetHomePrice)}</span>
-                </div>
-                 <div className="flex justify-between items-baseline">
-                    <span className="text-slate-400">Readiness Score:</span>
-                    <span className="text-xl font-bold text-white">{personalBuyingReadinessScore.toFixed(1)}/10</span>
-                </div>
-            </div>
-
-            <div className="flex space-x-2">
-                <button 
-                    onClick={() => onView(analysis)}
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-md text-sm transition-all duration-200"
-                >
-                    View
+            <div className="mt-4 flex justify-end items-center space-x-2">
+                <button onClick={onCompare} className={`text-xs font-semibold py-1 px-3 rounded-md transition-colors ${isSelectedForCompare ? 'bg-purple-500 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'}`}>
+                    {isSelectedForCompare ? '✓ Selected' : 'Compare'}
                 </button>
-                <button 
-                    onClick={() => onDelete(analysis.id)}
-                    className="flex-shrink-0 bg-slate-700 hover:bg-red-500/50 text-slate-300 hover:text-white font-semibold py-2 px-3 rounded-md text-sm transition-all duration-200"
-                    aria-label="Delete analysis"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                <button onClick={onSelect} className="text-sm bg-purple-600 hover:bg-purple-500 text-white font-bold py-1 px-4 rounded-md transition-colors">View</button>
+                <button onClick={onDelete} disabled={isDeleting} className="text-xs text-red-400 hover:text-red-300 disabled:text-slate-500 disabled:cursor-not-allowed">
+                    {isDeleting ? 'Deleting...' : 'Delete'}
                 </button>
             </div>
         </div>

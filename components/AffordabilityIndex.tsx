@@ -1,46 +1,32 @@
 import React from 'react';
-import type { AffordabilityAnalysis } from '../src/types';
+import type { AnalysisResult } from '../../src/types';
 import InfoTooltip from './InfoTooltip';
-import Citation from './Citation';
 
 interface AffordabilityIndexProps {
-  priceToIncomeRatio: AffordabilityAnalysis['priceToIncomeRatio'];
-  methodology: string;
+    priceToIncomeRatio: AnalysisResult['affordability']['priceToIncomeRatio'];
+    methodology: string;
 }
 
 const AffordabilityIndex: React.FC<AffordabilityIndexProps> = ({ priceToIncomeRatio, methodology }) => {
-    if (!priceToIncomeRatio) return null;
-
     const { user, cityAverage, summary } = priceToIncomeRatio;
 
-    const Bar = ({ label, value, isUser }: { label: string; value: number; isUser?: boolean }) => {
-        const maxValue = Math.max(user, cityAverage, 1) * 1.2;
-        const width = `${(value / maxValue) * 100}%`;
-        return (
-            <div className="mb-2">
-                <div className="flex justify-between items-center mb-1 text-sm">
-                    <span className="text-slate-300">{label}</span>
-                    <span className={`font-bold ${isUser ? 'text-white' : 'text-slate-300'}`}>{value.toFixed(1)}x</span>
-                </div>
-                <div className="w-full bg-slate-700 rounded-full h-2.5">
-                    <div className={`${isUser ? 'bg-purple-500' : 'bg-slate-500'} h-2.5 rounded-full`} style={{ width: width, transition: 'width 0.5s ease-out' }}></div>
-                </div>
-            </div>
-        )
-    };
-
     return (
-        <div className="mt-6">
-            <div className="flex items-center mb-3">
-                <h4 className="font-semibold text-slate-300">Price-to-Income Ratio</h4>
-                <InfoTooltip text="This ratio compares the home price to your annual income. A lower ratio is generally better. This chart compares your ratio for your target home to the city's average." />
-                <Citation title="Methodology" content={methodology} isDarkTheme={true}/>
+        <div className="mt-6 text-center">
+            <h5 className="text-sm font-semibold text-slate-300 mb-2 flex items-center justify-center">
+                Price-to-Income Ratio
+                <InfoTooltip text="Compares the target home price to your annual income. A lower ratio is generally better." methodology={methodology} />
+            </h5>
+            <div className="flex justify-around items-end">
+                <div className="w-1/2">
+                    <p className="text-xs text-purple-300">Your Ratio</p>
+                    <p className="text-2xl font-bold text-white">{user.toFixed(1)}x</p>
+                </div>
+                <div className="w-1/2">
+                    <p className="text-xs text-slate-400">City Average</p>
+                    <p className="text-2xl font-bold text-slate-300">{cityAverage.toFixed(1)}x</p>
+                </div>
             </div>
-            <div className="space-y-2">
-                <Bar label="Your Ratio" value={user} isUser />
-                <Bar label="City Average" value={cityAverage} />
-            </div>
-             <p className="text-xs text-slate-400 mt-3">{summary}</p>
+            <p className="text-xs text-slate-400 mt-3 italic">{summary}</p>
         </div>
     );
 };

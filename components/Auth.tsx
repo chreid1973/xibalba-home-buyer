@@ -1,95 +1,88 @@
 import React, { useState } from 'react';
 import Modal from './Modal';
-import { authService } from '../src/services/authService';
-import type { User } from '../src/types';
+// FIX: Corrected import path
+import { signUp, logIn } from '../src/services/authService';
 
 interface AuthProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoginSuccess: (user: User) => void;
-  onSignupSuccess: (user: User) => void;
+  onAuthSuccess: () => void;
 }
 
-const Auth: React.FC<AuthProps> = ({ isOpen, onClose, onLoginSuccess, onSignupSuccess }) => {
-  const [isLoginView, setIsLoginView] = useState(true);
+const Auth: React.FC<AuthProps> = ({ isOpen, onClose, onAuthSuccess }) => {
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setError('');
     setIsLoading(true);
-
     try {
-      if (isLoginView) {
-        const user = await authService.login(email, password);
-        onLoginSuccess(user);
+      if (isLogin) {
+        await logIn(email, password);
       } else {
-        const user = await authService.signup(email, password);
-        onSignupSuccess(user);
+        await signUp(email, password);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      onAuthSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'An error occurred.');
     } finally {
       setIsLoading(false);
     }
   };
-
-  const toggleView = () => {
-    setIsLoginView(!isLoginView);
-    setError(null);
-    setEmail('');
-    setPassword('');
-  };
+  
+  const inputStyle = "w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors";
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="p-4">
-        <h2 className="text-2xl font-bold text-purple-400 text-center mb-6">
-          {isLoginView ? 'Welcome Back' : 'Create Your Account'}
+        <h2 className="text-2xl font-bold text-purple-400 text-center mb-4">
+          {isLogin ? 'Welcome Back' : 'Create Account'}
         </h2>
-        
+        <p className="text-center text-slate-400 text-sm mb-6">
+          {isLogin ? "Sign in to save and view your analysis history." : "Create an account to get started."}
+        </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-300">Email Address</label>
+            <label htmlFor="email" className="sr-only">Email</label>
             <input 
               type="email" 
-              name="email" 
               id="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full bg-slate-800 border-slate-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-0 focus:border-purple-500 transition" 
-              placeholder="you@example.com"
-              required
+              value={email} 
+              onChange={e => setEmail(e.target.value)} 
+              placeholder="Email address"
+              className={inputStyle}
+              required 
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-300">Password</label>
+            <label htmlFor="password"  className="sr-only">Password</label>
             <input 
               type="password" 
-              name="password" 
               id="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full bg-slate-800 border-slate-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-0 focus:border-purple-500 transition" 
-              placeholder="••••••••"
-              required
-              minLength={6}
+              value={password} 
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Password"
+              className={inputStyle}
+              required 
             />
           </div>
-
-          {error && <p className="text-sm text-red-400 text-center">{error}</p>}
-
-          <button type="submit" disabled={isLoading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-lg shadow-purple-500/20 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 focus:ring-offset-slate-900 disabled:bg-slate-500 disabled:shadow-none disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105">
-            {isLoading ? 'Processing...' : (isLoginView ? 'Login' : 'Sign Up')}
+          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+          <button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 disabled:bg-slate-600 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Loading...' : (isLogin ? 'Log In' : 'Sign Up')}
           </button>
         </form>
-
-        <div className="text-center mt-6">
-          <button onClick={toggleView} className="text-sm text-purple-400 hover:text-purple-300 hover:underline">
-            {isLoginView ? 'Need an account? Sign Up' : 'Already have an account? Login'}
+        <div className="text-center mt-4">
+          <button onClick={() => setIsLogin(!isLogin)} className="text-sm text-purple-400 hover:underline">
+            {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Log in'}
           </button>
         </div>
       </div>

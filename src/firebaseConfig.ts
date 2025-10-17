@@ -1,24 +1,20 @@
-import firebase from "firebase/compat/app";
-import "firebase/compat/auth";
-import "firebase/compat/firestore";
+// FIX: Use a namespace import for firebase/app to work around potential module resolution issues.
+import * as firebaseApp from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
-// Your web app's Firebase configuration
-// In a real-world application, these would be stored in secure environment variables
-// and not be committed to version control. For this simulation, we use placeholders.
+// IMPORTANT: Replace with your actual Firebase configuration from your project settings.
 const firebaseConfig = {
-  apiKey: "AIzaSyC...your-api-key",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "your-sender-id",
-  appId: "your-app-id"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
 // Initialize Firebase
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+const app = firebaseApp.initializeApp(firebaseConfig);
 
-export const auth = firebase.auth();
-export const db = firebase.firestore();
-export const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp;
+export const auth = getAuth(app);
+export const db = getFirestore(app);

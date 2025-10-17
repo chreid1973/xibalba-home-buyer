@@ -1,126 +1,57 @@
-import React, { useState } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Sector, PieProps } from 'recharts';
-import type { TotalCostOfOwnership } from '../src/types';
-import Citation from './Citation';
+import React from 'react';
+import type { AnalysisResult } from '../../src/types';
+import InfoTooltip from './InfoTooltip';
 
 interface OwnershipCostChartProps {
-  tco: TotalCostOfOwnership;
-  pith: number;
-  methodology: string;
+    tco: AnalysisResult['totalCostOfOwnership'];
+    pith: number;
+    methodology: string;
 }
 
 const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-// Create a typed wrapper for the Pie component to address library type discrepancies
-const TypedPie = Pie as React.ComponentType<PieProps & { activeIndex?: number }>;
-
-// Custom active shape for the pie chart
-const renderActiveShape = (props: any) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
-
-  return (
-    <g>
-      <text x={cx} y={cy - 10} dy={8} textAnchor="middle" fill="#ffffff" className="text-2xl font-bold">
-        {currencyFormatter.format(payload.value)}
-      </text>
-      <text x={cx} y={cy + 10} dy={8} textAnchor="middle" fill="#cbd5e1" className="text-sm">
-        {`${(percent * 100).toFixed(1)}%`}
-      </text>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-      />
-      <Sector
-        cx={cx}
-        cy={cy}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        innerRadius={outerRadius + 6}
-        outerRadius={outerRadius + 10}
-        fill={fill}
-      />
-    </g>
-  );
-};
-
-
 const OwnershipCostChart: React.FC<OwnershipCostChartProps> = ({ tco, pith, methodology }) => {
-    const [activeIndex, setActiveIndex] = useState(0);
-
-    const data = [
-        { name: 'Housing (PITH)', value: pith },
-        { name: 'Utilities', value: tco.estimatedUtilities },
-        { name: 'Maintenance', value: tco.estimatedMaintenance },
-        { name: 'Insurance', value: tco.estimatedInsurance },
-    ].filter(d => typeof d.value === 'number' && d.value > 0);
-
-    const COLORS = ['#9333ea', '#c084fc', '#d8b4fe', '#e9d5ff'];
-
-    const onPieEnter = (_: any, index: number) => {
-        setActiveIndex(index);
-    };
+    const chartData = [
+        { name: 'Principal & Interest', value: tco.principalAndInterest, fill: '#8b5cf6' },
+        { name: 'Taxes', value: tco.estimatedTaxes, fill: '#a78bfa' },
+        { name: 'Insurance', value: tco.estimatedInsurance, fill: '#c084fc' },
+        { name: 'Utilities', value: tco.estimatedUtilities, fill: '#e9d5ff' },
+        { name: 'Maintenance', value: tco.estimatedMaintenance, fill: '#f3e8ff' },
+    ];
     
-    const onLegendEnter = (index: number) => {
-        setActiveIndex(index);
-    };
-
     return (
-        <div className="flex flex-col items-center flex-grow h-full w-full">
-            <div className="flex justify-center items-center w-full">
-                <h3 className="font-bold text-center text-purple-400">Estimated Monthly Cost</h3>
-                <Citation title="Methodology" content={methodology} isDarkTheme={true} />
+        <div>
+            <h4 className="font-bold text-purple-400 text-center mb-1 flex items-center justify-center">
+                Estimated Monthly Cost
+                 <InfoTooltip text="This chart breaks down the total estimated monthly cost of owning the target home." methodology={methodology} />
+            </h4>
+             <p className="text-center text-3xl font-bold text-white mb-4">{currencyFormatter.format(tco.totalMonthlyCost)}</p>
+            <div className="w-full flex h-8 rounded-lg overflow-hidden bg-slate-700">
+                {chartData.map(item => (
+                    <div
+                        key={item.name}
+                        className="group relative h-full"
+                        style={{ width: `${(item.value / tco.totalMonthlyCost) * 100}%`, backgroundColor: item.fill }}
+                    >
+                         <div className="absolute bottom-full mb-2 w-48 bg-slate-800 text-slate-200 text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 left-1/2 -translate-x-1/2">
+                            {item.name}: {currencyFormatter.format(item.value)}
+                            <svg className="absolute h-2 w-full left-0 top-full text-slate-800" x="0px" y="0px" viewBox="0 0 255 255" xmlSpace="preserve">
+                                <polygon className="fill-current" points="0,0 127.5,127.5 255,0"/>
+                            </svg>
+                        </div>
+                    </div>
+                ))}
             </div>
-            <div className="relative w-full flex-grow mt-2 grid grid-cols-1 md:grid-cols-2 items-center">
-                 <div className="w-full h-48 md:h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <TypedPie
-                                activeIndex={activeIndex}
-                                activeShape={renderActiveShape}
-                                data={data}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
-                                fill="#8884d8"
-                                dataKey="value"
-                                onMouseEnter={onPieEnter}
-                            >
-                                {data.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </TypedPie>
-                        </PieChart>
-                    </ResponsiveContainer>
-                 </div>
-                 <div className="w-full pl-4">
-                     <div className="text-center md:text-left mb-2">
-                        <span className="text-slate-400 text-sm">Total Monthly Cost</span>
-                        <p className="text-3xl font-bold text-white">{currencyFormatter.format(tco.totalMonthlyCost)}</p>
-                     </div>
-                     <ul className="space-y-2">
-                         {data.map((entry, index) => (
-                             <li 
-                                key={`legend-${index}`} 
-                                className={`flex items-center justify-between text-sm p-2 rounded-md cursor-pointer transition-all duration-200 ${activeIndex === index ? 'bg-slate-800/50' : ''}`}
-                                onMouseOver={() => onLegendEnter(index)}
-                             >
-                                 <div className="flex items-center">
-                                     <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                                     <span className="text-slate-300">{entry.name}</span>
-                                 </div>
-                                 <span className="font-semibold text-white">{currencyFormatter.format(entry.value)}</span>
-                             </li>
-                         ))}
-                     </ul>
-                 </div>
+             <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2">
+                {chartData.map(item => (
+                    <div key={item.name} className="flex items-center text-xs">
+                        <span className="w-3 h-3 rounded-sm mr-2" style={{ backgroundColor: item.fill }}></span>
+                        <span className="text-slate-300">{item.name}</span>
+                    </div>
+                ))}
             </div>
         </div>
     );
 };
+
 export default OwnershipCostChart;

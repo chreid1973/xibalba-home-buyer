@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { UserInput, AnalysisResult } from './types';
+// Fix: Corrected import path for types
+import type { UserInput, AnalysisResult } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 

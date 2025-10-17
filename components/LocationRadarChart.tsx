@@ -1,40 +1,43 @@
 import React from 'react';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
-import type { LocationAnalysis } from '../src/types';
-import InfoTooltip from './InfoTooltip';
+import type { AnalysisResult } from '../../src/types';
 import Citation from './Citation';
 
 interface LocationRadarChartProps {
-  scores: LocationAnalysis['scores'];
+  scores: AnalysisResult['locationAnalysis']['scores'];
   dataSource: string;
 }
 
 const LocationRadarChart: React.FC<LocationRadarChartProps> = ({ scores, dataSource }) => {
-  const data = [
-    { subject: 'Affordability', score: scores.affordability.score, fullMark: 10 },
-    { subject: 'Job Market', score: scores.jobMarket.score, fullMark: 10 },
-    { subject: 'Safety', score: scores.safety.score, fullMark: 10 },
-    { subject: 'Schools', score: scores.schools.score, fullMark: 10 },
-    { subject: 'Amenities', score: scores.amenities.score, fullMark: 10 },
-  ].filter(item => typeof item.score === 'number');
+    const scoreData = [
+        { name: 'Affordability', value: scores.affordability.score },
+        { name: 'Job Market', value: scores.jobMarket.score },
+        { name: 'Safety', value: scores.safety.score },
+        { name: 'Schools', value: scores.schools.score },
+        { name: 'Amenities', value: scores.amenities.score },
+    ];
 
-  return (
-    <div className="flex flex-col flex-grow h-full">
-       <div className="flex justify-center items-center">
-            <h3 className="font-bold text-center text-purple-400">Location Attractiveness</h3>
-            <InfoTooltip text="Scores (1-10) for key location factors. Higher scores are better. This helps you understand the pros and cons of the neighborhood at a glance." />
-            <Citation title="Data Source" content={dataSource} isDarkTheme={true} />
+    return (
+        <div className="text-center">
+            <h4 className="font-bold text-purple-400 mb-4 flex items-center justify-center">
+                Location Attractiveness
+                <Citation title="Data Source" content={dataSource} isDarkTheme={true} />
+            </h4>
+            <div className="p-4 bg-slate-900/50 rounded-lg">
+                <p className="text-xs text-slate-400 mb-2">Each category is scored from 1 to 10.</p>
+                <div className="space-y-3">
+                    {scoreData.map(item => (
+                        <div key={item.name} className="flex items-center">
+                            <span className="text-sm text-slate-300 w-28 text-left">{item.name}</span>
+                            <div className="w-full bg-slate-700 rounded-full h-2.5">
+                                <div className="bg-purple-500 h-2.5 rounded-full" style={{ width: `${item.value * 10}%` }}></div>
+                            </div>
+                            <span className="text-sm font-semibold text-white w-10 text-right">{item.value.toFixed(1)}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
-      <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-          <PolarGrid stroke="rgba(168, 85, 247, 0.2)" />
-          <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-          <PolarRadiusAxis angle={30} domain={[0, 10]} tick={false} axisLine={false} />
-          <Radar name="Score" dataKey="score" stroke="#a855f7" fill="#a855f7" fillOpacity={0.6} />
-          <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #a855f7', borderRadius: '0.5rem' }} />
-        </RadarChart>
-      </ResponsiveContainer>
-    </div>
-  );
+    );
 };
+
 export default LocationRadarChart;

@@ -1,10 +1,8 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
 import InfoTooltip from './InfoTooltip';
-import Citation from './Citation';
 
 interface TrendChartProps {
-  data: any[];
+  data: { [key: string]: string | number }[];
   dataKey: string;
   xAxisKey: string;
   title: string;
@@ -12,46 +10,57 @@ interface TrendChartProps {
   dataSource: string;
   color: string;
   formatter?: (value: number) => string;
-  chartType?: 'line' | 'area' | 'bar';
+  chartType?: 'line' | 'bar';
 }
 
-const CustomTooltip = ({ active, payload, label, formatter }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-slate-800 p-2 border border-purple-500/50 rounded-md text-sm">
-        <p className="label text-slate-300">{`${label}`}</p>
-        <p className="intro text-white font-semibold">{`${payload[0].name} : ${formatter ? formatter(payload[0].value) : payload[0].value}`}</p>
-      </div>
-    );
-  }
-  return null;
-};
+const TrendChart: React.FC<TrendChartProps> = ({ data, dataKey, xAxisKey, title, tooltipText, dataSource, color, formatter = (v) => String(v), chartType = 'line' }) => {
+    const values = data.map(d => d[dataKey] as number);
+    const minVal = Math.min(...values);
+    const maxVal = Math.max(...values);
+    const range = maxVal - minVal;
 
-const TrendChart: React.FC<TrendChartProps> = ({ data, dataKey, xAxisKey, title, tooltipText, dataSource, color, formatter = (val) => String(val), chartType = 'area' }) => {
-  
-  const ChartComponent = chartType === 'bar' ? BarChart : (chartType === 'area' ? AreaChart : LineChart);
-  const ChartElement = chartType === 'bar' ? Bar : (chartType === 'area' ? Area : Line);
-  
-  return (
-    <div className="h-full flex flex-col">
-      <div className="flex justify-center items-center">
-        <h3 className="font-bold text-center text-purple-400">{title}</h3>
-        <InfoTooltip text={tooltipText} />
-        <Citation title="Data Source" content={dataSource} isDarkTheme={true}/>
-      </div>
-      <div className="flex-grow w-full h-48">
-        <ResponsiveContainer width="100%" height="100%">
-          <ChartComponent data={data} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(168, 85, 247, 0.1)" />
-            <XAxis dataKey={xAxisKey} tick={{ fill: '#94a3b8', fontSize: 10 }} />
-            <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={formatter} domain={['dataMin', 'dataMax']} />
-            <Tooltip content={<CustomTooltip formatter={formatter} />} />
-            <ChartElement type="monotone" dataKey={dataKey} name={title} stroke={color} fill={color} fillOpacity={0.2} />
-          </ChartComponent>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
+    // Handle case where all values are the same
+    const getNormalizedHeight = (val: number) => {
+        if (range === 0) return 50;
+        return ((val - minVal) / range) * 100;
+    }
+
+    return (
+        <div>
+            <h4 className="font-bold text-purple-400 mb-4 text-center flex items-center justify-center">
+                {title}
+                <InfoTooltip text={tooltipText} dataSource={dataSource} />
+            </h4>
+            <div className="w-full h-48 bg-slate-900/50 p-2 rounded-lg">
+                <div className="w-full h-full border-l border-b border-slate-700 relative">
+                    {chartType === 'line' && data.length > 1 ? (
+                         <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <polyline
+                                fill="none"
+                                stroke={color}
+                                strokeWidth="2"
+                                points={data.map((d, i) => {
+                                    const y = 100 - getNormalizedHeight(d[dataKey] as number);
+                                    const x = (i / (data.length - 1)) * 100;
+                                    return `${x},${y < 2 ? 2 : (y > 98 ? 98 : y)}`;
+                                }).join(' ')}
+                            />
+                        </svg>
+                    ) : (
+                        <div className="flex h-full items-end justify-around gap-1 px-1">
+                           {data.map((d, i) => (
+                               <div key={i} className="w-full" style={{ height: `${getNormalizedHeight(d[dataKey] as number)}%`, backgroundColor: color, minHeight: '2px' }}></div>
+                           ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="flex justify-between text-xs text-slate-400 mt-1 px-1">
+                <span>{data[0]?.[xAxisKey]}</span>
+                <span>{data[data.length - 1]?.[xAxisKey]}</span>
+            </div>
+        </div>
+    );
 };
 
 export default TrendChart;

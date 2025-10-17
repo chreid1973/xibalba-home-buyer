@@ -1,38 +1,32 @@
-import { db, serverTimestamp } from '../firebaseConfig';
+import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp, Timestamp } from "firebase/firestore";
+import { db } from '../firebaseConfig';
 import type { AnalysisResult } from '../types';
 
-const saveAnalysis = async (userId: string, analysis: Omit<AnalysisResult, 'id' | 'savedAt'>): Promise<string> => {
-  const docRef = await db.collection('users').doc(userId).collection('analyses').add({
-    ...analysis,
-    savedAt: serverTimestamp(),
+const getAnalysesCollection = (userId: string) => collection(db, 'users', userId, 'analyses');
+
+export const saveAnalysis = async (userId: string, analysis: Omit<AnalysisResult, 'id' | 'savedAt'>): Promise<AnalysisResult> => {
+  const docRef = await addDoc(getAnalysesCollection(userId), {
+      ...analysis,
+      savedAt: serverTimestamp()
   });
-  return docRef.id;
+  return { ...analysis, id: docRef.id, savedAt: new Date().toISOString() };
 };
 
-const getAnalyses = async (userId: string): Promise<AnalysisResult[]> => {
-  const snapshot = await db.collection('users').doc(userId).collection('analyses').orderBy('savedAt', 'desc').get();
-  return snapshot.docs.map(doc => {
-    const data = doc.data();
-    // Ensure savedAt is converted to a string format if it exists
-    const savedAt = data.savedAt?.toDate ? data.savedAt.toDate().toISOString() : new Date().toISOString();
-    return {
-      ...(data as Omit<AnalysisResult, 'id' | 'savedAt'>),
-      id: doc.id,
-      savedAt: savedAt,
-    };
-  });
+export const getSavedAnalyses = async (userId: string): Promise<AnalysisResult[]> => {
+    const q = query(getAnalysesCollection(userId), orderBy('savedAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        const savedAtTimestamp = data.savedAt as Timestamp;
+        return {
+            ...data,
+            id: doc.id,
+            savedAt: savedAtTimestamp?.toDate ? savedAtTimestamp.toDate().toISOString() : new Date().toISOString(),
+        } as AnalysisResult;
+    });
 };
 
-
-const deleteAnalysis = async (userId: string, analysisId: string): Promise<void> => {
-  if (!userId || !analysisId) {
-    throw new Error("User ID and Analysis ID are required to delete.");
-  }
-  await db.collection('users').doc(userId).collection('analyses').doc(analysisId).delete();
-};
-
-export const analysisService = {
-  saveAnalysis,
-  getAnalyses,
-  deleteAnalysis,
+export const deleteAnalysis = async (userId: string, analysisId: string): Promise<void> => {
+  const docRef = doc(db, 'users', userId, 'analyses', analysisId);
+  await deleteDoc(docRef);
 };
