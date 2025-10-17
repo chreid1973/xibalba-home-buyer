@@ -1,165 +1,188 @@
 
 import React, { useState, useEffect } from 'react';
-import type { UserInput, AnalysisResult, User } from './src/types';
 import { getAIAnalysis } from './src/services/geminiService';
 import { authService } from './src/services/authService';
 import { analysisService } from './src/services/analysisService';
+import type { User, UserInput, AnalysisResult } from './src/types';
 
+// Import Firebase
+// Fix: Update Firebase imports to v8 namespaced API.
+import firebase from 'firebase/app';
+import 'firebase/auth';
+
+// Import components
 import Header from './components/Header';
 import Hero from './components/Hero';
 import InputForm from './components/InputForm';
+import LoadingAnalysis from './components/LoadingAnalysis';
 import Results from './components/Results';
 import Footer from './components/Footer';
-import LoadingAnalysis from './components/LoadingAnalysis';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
+import Compare from './components/Compare';
 
-const App: React.FC = () => {
-  const [view, setView] = useState<'hero' | 'form' | 'loading' | 'results' | 'dashboard'>('hero');
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+type View = 'home' | 'form' | 'loading' | 'results' | 'dashboard' | 'compare';
+
+function App() {
+  const [view, setView] = useState<View>('home');
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [savedAnalyses, setSavedAnalyses] = useState<AnalysisResult[]>([]);
+  const [analysesToCompare, setAnalysesToCompare] = useState<AnalysisResult[]>([]);
+  const [isCurrentResultSaved, setIsCurrentResultSaved] = useState(false);
 
   useEffect(() => {
-    const user = authService.getCurrentUser();
-    if (user) {
-      setCurrentUser(user);
-      fetchAnalyses(user);
-    }
+    // Fix: Use v8 namespaced API for authentication.
+    const auth = firebase.auth();
+    // onAuthStateChanged is the real-time listener for auth state.
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+      if (firebaseUser) {
+        // User is signed in.
+        const appUser: User = { uid: firebaseUser.uid, email: firebaseUser.email! };
+        setCurrentUser(appUser);
+        loadDashboard(appUser);
+      } else {
+        // User is signed out.
+        setCurrentUser(null);
+        setSavedAnalyses([]);
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
-  
-  const fetchAnalyses = async (user: User) => {
+
+  const loadDashboard = async (user: User) => {
     const analyses = await analysisService.getAnalysesForUser(user);
     setSavedAnalyses(analyses);
   };
-
+  
   const handleStartAnalysis = () => {
     setView('form');
     setAnalysisResult(null);
     setError(null);
   };
 
-  const handleNewAnalysis = () => {
-    setView('form');
-    setAnalysisResult(null);
-    setError(null);
-  };
-
   const handleAnalyze = async (data: UserInput) => {
-    setView('loading');
+    setIsLoading(true);
     setError(null);
-
+    setView('loading');
     try {
       const result = await getAIAnalysis(data);
       setAnalysisResult(result);
+      setIsCurrentResultSaved(false);
       setView('results');
-    } catch (e) {
-      console.error(e);
-      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
-      setError(`An error occurred while analyzing your data. Please try again. Details: ${errorMessage}`);
-      setView('results');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      setView('results'); // Show error on results page
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleLoginSuccess = (user: User) => {
-    setCurrentUser(user);
-    setIsAuthModalOpen(false);
-    fetchAnalyses(user);
-    if(view === 'hero') {
-      setView('dashboard');
-    }
-  };
-
-  const handleLogout = () => {
-    authService.logout();
-    setCurrentUser(null);
-    setSavedAnalyses([]);
-    setView('hero');
-  };
-
-  const handleShowDashboard = () => {
-    if(currentUser) {
-        fetchAnalyses(currentUser);
-        setView('dashboard');
-    }
-  };
-
-  const handleViewAnalysis = (analysis: AnalysisResult) => {
-    setAnalysisResult(analysis);
-    setView('results');
-  };
-
-  const handleDeleteAnalysis = async (analysisId: string) => {
-    if (currentUser) {
-      await analysisService.deleteAnalysis(currentUser, analysisId);
-      fetchAnalyses(currentUser); // Refresh list
-    }
-  };
-
-  const handleSaveAnalysis = async (result: AnalysisResult) => {
-      if (currentUser) {
-          await analysisService.saveAnalysis(currentUser, result);
-          await fetchAnalyses(currentUser);
-      }
   };
   
+  const handleShowAuth = () => {
+    setIsAuthModalOpen(true);
+  };
+
+  const handleLogin = (user: User) => {
+    // The onAuthStateChanged listener will handle setting the user and loading the dashboard.
+    setCurrentUser(user); // Optimistically set user for faster UI feedback
+    setIsAuthModalOpen(false);
+    loadDashboard(user);
+  };
+  
+  const handleSignup = (user: User) => {
+    // The onAuthStateChanged listener will handle setting the user.
+    setCurrentUser(user); // Optimistically set user
+    setIsAuthModalOpen(false);
+  };
+
+  const handleLogout = async () => {
+    await authService.logout();
+    // The onAuthStateChanged listener will handle clearing user state.
+    if (view === 'dashboard' || view === 'compare') {
+      setView('home');
+    }
+  };
+  
+  const handleShowDashboard = () => {
+    if (currentUser) {
+        loadDashboard(currentUser);
+        setView('dashboard');
+    } else {
+        handleShowAuth();
+    }
+  };
+  
+  const handleSaveAnalysis = async (resultToSave: AnalysisResult) => {
+    if (currentUser && resultToSave) {
+        try {
+            const savedAnalysis = await analysisService.saveAnalysis(currentUser, resultToSave);
+            setAnalysisResult(savedAnalysis); // Update result with new ID and savedAt
+            setIsCurrentResultSaved(true);
+            await loadDashboard(currentUser);
+        } catch (error) {
+            console.error("Failed to save analysis:", error);
+        }
+    } else if (!currentUser) {
+        handleShowAuth();
+    }
+  };
+  
+  const handleDeleteAnalysis = async (analysisId: string) => {
+    if (currentUser && analysisId) {
+        await analysisService.deleteAnalysis(currentUser, analysisId);
+        await loadDashboard(currentUser); // Refresh dashboard
+    }
+  };
+  
+  const handleViewAnalysis = (analysis: AnalysisResult) => {
+      setAnalysisResult(analysis);
+      setIsCurrentResultSaved(true); // Since it comes from dashboard, it's saved
+      setView('results');
+  };
+
+  const handleCompare = (analysisIds: string[]) => {
+      const toCompare = savedAnalyses.filter(a => a.id && analysisIds.includes(a.id));
+      setAnalysesToCompare(toCompare);
+      setView('compare');
+  };
+
   const renderContent = () => {
     switch (view) {
-      case 'hero':
+      case 'home':
         return <Hero onStartAnalysis={handleStartAnalysis} />;
       case 'form':
-        return (
-           <div className="max-w-4xl mx-auto animate-fade-in">
-             <div className="grid md:grid-cols-2 gap-8 items-start">
-                <div className="md:col-span-1">
-                    <InputForm onAnalyze={handleAnalyze} isLoading={false} />
-                </div>
-                <div className="md:col-span-1 text-slate-300 p-6 bg-black/20 border border-purple-500/20 rounded-lg hidden md:block">
-                    <h3 className="text-xl font-bold text-purple-400 mb-4">How It Works</h3>
-                    <p className="text-slate-400 mb-4">
-                        Unlock expert-level insights for your home buying journey. Our AI co-pilot synthesizes complex financial data and real-time market trends into a clear, personalized strategy, empowering you to make a confident and informed decision.
-                    </p>
-                    <ul className="list-disc list-inside space-y-2 text-slate-400">
-                      <li><span className="font-semibold text-slate-300">Personal Finances:</span> We assess your income, debt, and savings to determine what you can realistically afford.</li>
-                      <li><span className="font-semibold text-slate-300">Market Conditions:</span> We analyze current and forecasted real estate trends in your desired area.</li>
-                      <li><span className="font-semibold text-slate-300">Location Score:</span> We evaluate key neighborhood metrics like safety, schools, and amenities.</li>
-                      <li><span className="font-semibold text-slate-300">Actionable Advice:</span> We synthesize all this data into clear, actionable recommendations to guide your decision.</li>
-                    </ul>
-                </div>
-            </div>
-           </div>
-        );
+        return <InputForm onAnalyze={handleAnalyze} isLoading={isLoading} />;
       case 'loading':
-          return <LoadingAnalysis />;
+        return <LoadingAnalysis />;
       case 'results':
-        return <Results 
-                    error={error} 
-                    result={analysisResult}
-                    currentUser={currentUser}
-                    onSave={handleSaveAnalysis}
-                    isSaved={!!analysisResult?.id}
-                />;
+        return <Results result={analysisResult} error={error} currentUser={currentUser} onSave={handleSaveAnalysis} isSaved={isCurrentResultSaved} />;
       case 'dashboard':
         return <Dashboard 
-                 analyses={savedAnalyses}
-                 onView={handleViewAnalysis}
-                 onDelete={handleDeleteAnalysis}
-                 onNewAnalysis={handleNewAnalysis}
-               />;
+                  analyses={savedAnalyses}
+                  onView={handleViewAnalysis}
+                  onDelete={handleDeleteAnalysis}
+                  onNewAnalysis={handleStartAnalysis}
+                  onCompare={handleCompare}
+                />;
+      case 'compare':
+        return <Compare analyses={analysesToCompare} onBack={handleShowDashboard} />;
       default:
         return <Hero onStartAnalysis={handleStartAnalysis} />;
     }
   };
 
   return (
-    <div className="bg-transparent text-white min-h-screen font-sans antialiased">
+    <div className="bg-slate-900 text-white min-h-screen font-sans bg-gradient-to-br from-indigo-950 via-slate-900 to-black">
       <Header 
-        showNewAnalysisButton={view === 'results' || view === 'dashboard'} 
-        onNewAnalysis={handleNewAnalysis}
+        showNewAnalysisButton={view !== 'home' && view !== 'form'}
+        onNewAnalysis={handleStartAnalysis}
         currentUser={currentUser}
-        onShowAuth={() => setIsAuthModalOpen(true)}
+        onShowAuth={handleShowAuth}
         onLogout={handleLogout}
         onShowDashboard={handleShowDashboard}
       />
@@ -170,8 +193,8 @@ const App: React.FC = () => {
       <Auth 
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        onLoginSuccess={handleLoginSuccess}
-        onSignupSuccess={handleLoginSuccess}
+        onLoginSuccess={handleLogin}
+        onSignupSuccess={handleSignup}
       />
     </div>
   );

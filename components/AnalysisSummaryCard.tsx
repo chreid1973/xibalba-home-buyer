@@ -6,6 +6,8 @@ interface AnalysisSummaryCardProps {
   analysis: AnalysisResult;
   onView: (analysis: AnalysisResult) => void;
   onDelete: (analysisId: string) => void;
+  onSelect: (analysisId: string) => void;
+  isSelected: boolean;
 }
 
 const getRecommendationStyle = (recommendation: string): { color: string, text: string } => {
@@ -23,20 +25,30 @@ const getRecommendationStyle = (recommendation: string): { color: string, text: 
 };
 
 
-const AnalysisSummaryCard: React.FC<AnalysisSummaryCardProps> = ({ analysis, onView, onDelete }) => {
-    const { userInput, personalBuyingReadinessScore, financialAdvice, savedAt } = analysis;
+const AnalysisSummaryCard: React.FC<AnalysisSummaryCardProps> = ({ analysis, onView, onDelete, onSelect, isSelected }) => {
+    const { userInput, personalBuyingReadinessScore, financialAdvice, savedAt, id } = analysis;
     const recommendationStyle = getRecommendationStyle(financialAdvice.overallRecommendation);
 
     return (
-        <div className="bg-black/20 border border-purple-500/10 rounded-lg shadow-lg p-6 flex flex-col justify-between h-full transition-all duration-300 hover:border-purple-500/30 hover:shadow-purple-500/10">
+        <div className={`bg-black/20 border rounded-lg shadow-lg p-6 flex flex-col justify-between h-full transition-all duration-300 ${isSelected ? 'border-blue-500 shadow-blue-500/20' : 'border-purple-500/10 hover:border-purple-500/30 hover:shadow-purple-500/10'}`}>
             <div>
-                <div className="flex justify-between items-start">
-                    <h3 className="text-xl font-bold text-white pr-4">{userInput.city}, {userInput.postalCode}</h3>
+                 <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center">
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => onSelect(id)}
+                            className="h-5 w-5 rounded bg-slate-700 border-slate-600 text-blue-500 focus:ring-blue-600 focus:ring-2"
+                        />
+                        <div className="ml-3">
+                           <h3 className="text-xl font-bold text-white">{userInput.city}, {userInput.postalCode}</h3>
+                           <p className="text-sm text-slate-400">Saved on {new Date(savedAt).toLocaleDateString()}</p>
+                        </div>
+                    </div>
                     <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${recommendationStyle.color}`}>
                         {recommendationStyle.text}
                     </span>
                 </div>
-                <p className="text-sm text-slate-400 mt-1">Saved on {new Date(savedAt).toLocaleDateString()}</p>
             </div>
             
             <div className="my-6 space-y-3">

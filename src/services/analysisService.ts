@@ -1,58 +1,60 @@
-
 import type { User, AnalysisResult } from '../types';
-
-const ANALYSES_KEY = 'property_scout_analyses';
+import { db } from '../firebaseConfig';
+// Fix: Update Firebase imports to v8 namespaced API.
+import firebase from 'firebase/app';
+import 'firebase/firestore';
 
 class AnalysisService {
-  private getAnalyses(): Record<string, AnalysisResult[]> {
-    const analyses = localStorage.getItem(ANALYSES_KEY);
-    return analyses ? JSON.parse(analyses) : {};
-  }
-
-  private saveAllAnalyses(allAnalyses: Record<string, AnalysisResult[]>): void {
-    localStorage.setItem(ANALYSES_KEY, JSON.stringify(allAnalyses));
+  
+  private getAnalysesCollectionRef(user: User) {
+      // Fix: Use v8 chained method for collection reference.
+      return db.collection('users').doc(user.uid).collection('analyses');
   }
 
   async getAnalysesForUser(user: User): Promise<AnalysisResult[]> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const allAnalyses = this.getAnalyses();
-        resolve(allAnalyses[user.email] || []);
-      }, 300);
+    const analysesCol = this.getAnalysesCollectionRef(user);
+    // Fix: Use v8 chained method for query and .get() to fetch.
+    const q = analysesCol.orderBy('savedAt', 'desc');
+    const querySnapshot = await q.get();
+    
+    const analyses: AnalysisResult[] = [];
+    querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        analyses.push({
+            id: doc.id,
+            ...data,
+            // Convert Firestore Timestamp to ISO string for consistency
+            savedAt: data.savedAt?.toDate().toISOString() || new Date().toISOString(),
+        } as AnalysisResult);
     });
+    return analyses;
   }
 
-  async saveAnalysis(user: User, analysis: AnalysisResult): Promise<AnalysisResult> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const allAnalyses = this.getAnalyses();
-        const userAnalyses = allAnalyses[user.email] || [];
-        
-        const newAnalysis = {
-            ...analysis,
-            id: new Date().toISOString(), // Assign a unique ID on save
-            savedAt: new Date().toISOString(),
-        };
+  async saveAnalysis(user: User, analysis: Omit<AnalysisResult, 'id' | 'savedAt'>): Promise<AnalysisResult> {
+    const analysesCol = this.getAnalysesCollectionRef(user);
+    
+    const docToSave = {
+        ...analysis,
+        // Fix: Use v8 FieldValue for serverTimestamp.
+        savedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+    
+    // Fix: Use v8 .add() method to save document.
+    const docRef = await analysesCol.add(docToSave);
 
-        userAnalyses.unshift(newAnalysis); // Add to the beginning of the list
-        allAnalyses[user.email] = userAnalyses;
-        this.saveAllAnalyses(allAnalyses);
-        resolve(newAnalysis);
-      }, 500);
-    });
+    // Return the saved analysis with its new ID
+    return {
+        ...analysis,
+        id: docRef.id,
+        savedAt: new Date().toISOString(), // Use client-side date for immediate feedback
+    };
   }
   
   async deleteAnalysis(user: User, analysisId: string): Promise<void> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const allAnalyses = this.getAnalyses();
-        let userAnalyses = allAnalyses[user.email] || [];
-        userAnalyses = userAnalyses.filter(a => a.id !== analysisId);
-        allAnalyses[user.email] = userAnalyses;
-        this.saveAllAnalyses(allAnalyses);
-        resolve();
-      }, 300);
-    });
+    // Fix: Use v8 chained methods to get doc reference.
+    const docRef = db.collection('users').doc(user.uid).collection('analyses').doc(analysisId);
+    // Fix: Use v8 .delete() method.
+    await docRef.delete();
   }
 }
 

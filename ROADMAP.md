@@ -4,40 +4,26 @@ This document outlines the high-level strategic epics for the Property Scout app
 
 ---
 
-### v1.0: Core AI Analysis Engine (COMPLETE)
+### v1.0: Core AI Analysis Engine
 - **Status:** ✅ Shipped
 - **Description:** Develop the core functionality for a user to input their financial and location data and receive a comprehensive, AI-powered home buying analysis.
-- **Key Features:**
-  - Financial Profile Input Form
-  - Dynamic AI Analysis via Gemini API
-  - Comprehensive Results Dashboard with Charts & Scores
-  - "Futuristic Aurora" Theme
 
-### v2.0: Enhanced User Interactivity & Experience (COMPLETE)
+### v2.0: Enhanced User Interactivity & Experience
 - **Status:** ✅ Shipped
 - **Description:** Refine the user experience by making the application more interactive, transparent, and professional.
-- **Key Features:**
-  - Scenario Simulator
-  - Dynamic Score Updates
-  - Interactive "Verdict Explainer"
-  - Professional SVG Iconography
-  - Citation & Methodology Tooltips
-  - Dynamic Loading Animations
-  - Application of AIX & UIX Principles
 
-### v3.0: User Personalization & Accounts (IN PROGRESS)
-- **Status:** 🚧 In Progress
+### v3.0: User Personalization & Accounts
+- **Status:** ✅ Shipped
 - **Description:** Introduce user accounts to allow for saving, comparing, and tracking multiple property analyses over time.
-- **Key Features:**
-  - User Authentication (Login/Sign Up)
-  - Saved Analysis Dashboard
-  - Property Comparison Tools
-  - Email Notifications for Market Shifts
 
-### v4.0: Live Data Integration (PLANNED)
-- **Status:** 📝 Planned
-- **Description:** Integrate with live MLS (Multiple Listing Service) feeds to allow users to analyze specific, real-time property listings.
+### v4.0: Live Platform Infrastructure
+- **Status:** 🚧 In Progress
+- **Description:** Architect and implement the live backend infrastructure required to transform the application from a prototype to a scalable, production-ready product.
 - **Key Features:**
-  - Real-time Property Search
-  - "Analyze This Property" Button on Listings
-  - Integration with Live Mortgage Rate APIs
+  - Firebase Authentication Integration
+  - Firestore Database for Data Persistence
+  - Deployment Readiness and GitHub Best Practices
+
+### v5.0: The "Scout Studio" Platform (PLANNED)
+- **Status:** 📝 Planned
+- **Description:** Evolve the project into a multi-tenant, white-label SaaS platform, allowing clients to build and manage their own "Scout" applications via a WYSIWYG editor.

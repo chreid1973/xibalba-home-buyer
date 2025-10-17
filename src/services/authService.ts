@@ -1,57 +1,64 @@
+// Fix: Update Firebase imports to v8 namespaced API.
+import firebase from 'firebase/app';
+import 'firebase/auth';
 import type { User } from '../types';
 
-const USERS_KEY = 'property_scout_users';
-const CURRENT_USER_KEY = 'property_scout_current_user';
+// Fix: Use v8 namespaced API for authentication.
+const auth = firebase.auth();
 
 class AuthService {
-  private getUsers(): Record<string, string> {
-    const users = localStorage.getItem(USERS_KEY);
-    return users ? JSON.parse(users) : {};
-  }
-
-  private saveUsers(users: Record<string, string>): void {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  }
-
   async signup(email: string, password: string): Promise<User> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = this.getUsers();
-        if (users[email]) {
-          return reject(new Error('An account with this email already exists.'));
-        }
-        // In a real app, hash the password!
-        users[email] = password;
-        this.saveUsers(users);
-        const newUser: User = { email };
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
-        resolve(newUser);
-      }, 500);
-    });
+    try {
+      // Fix: Use v8 method on auth object.
+      const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+      const firebaseUser = userCredential.user;
+      if (!firebaseUser) {
+        throw new Error('User creation failed.');
+      }
+      return { uid: firebaseUser.uid, email: firebaseUser.email! };
+    } catch (error: any) {
+      // Provide more user-friendly error messages
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          throw new Error('An account with this email already exists.');
+        case 'auth/invalid-email':
+          throw new Error('Please enter a valid email address.');
+        case 'auth/weak-password':
+          throw new Error('Password should be at least 6 characters.');
+        default:
+          throw new Error('An unexpected error occurred during sign up.');
+      }
+    }
   }
 
   async login(email: string, password: string): Promise<User> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = this.getUsers();
-        if (!users[email] || users[email] !== password) {
-          return reject(new Error('Invalid email or password.'));
-        }
-        const user: User = { email };
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-        resolve(user);
-      }, 500);
-    });
+    try {
+      // Fix: Use v8 method on auth object.
+      const userCredential = await auth.signInWithEmailAndPassword(email, password);
+      const firebaseUser = userCredential.user;
+       if (!firebaseUser) {
+        throw new Error('User not found.');
+      }
+      return { uid: firebaseUser.uid, email: firebaseUser.email! };
+    } catch (error: any) {
+      switch (error.code) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          throw new Error('Invalid email or password.');
+        default:
+          throw new Error('An unexpected error occurred during login.');
+      }
+    }
   }
 
-  logout(): void {
-    localStorage.removeItem(CURRENT_USER_KEY);
+  async logout(): Promise<void> {
+    // Fix: Use v8 method on auth object.
+    await auth.signOut();
   }
 
-  getCurrentUser(): User | null {
-    const user = localStorage.getItem(CURRENT_USER_KEY);
-    return user ? JSON.parse(user) : null;
-  }
+  // The getCurrentUser method is now obsolete and has been removed.
+  // The onAuthStateChanged listener in App.tsx is the correct way to manage auth state.
 }
 
 export const authService = new AuthService();

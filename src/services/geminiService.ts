@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import type { UserInput, AnalysisResult } from './types';
 
@@ -301,12 +300,10 @@ export async function getAIAnalysis(userInput: UserInput): Promise<AnalysisResul
     // We explicitly cast here after parsing, trusting the API conforms to the schema.
     const partialResult = JSON.parse(jsonString) as Omit<AnalysisResult, 'id' | 'savedAt' | 'userInput'>;
     
-    // Combine the AI result with the user input and temporary IDs
+    // Combine the AI result with the user input
     const analysisResult: AnalysisResult = {
       ...partialResult,
       userInput: userInput,
-      id: '', // Will be assigned on save
-      savedAt: '', // Will be assigned on save
     };
     
     return analysisResult;

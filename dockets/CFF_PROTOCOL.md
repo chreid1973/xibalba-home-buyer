@@ -1,6 +1,6 @@
 # Cary's Foundational Frame (CFF) Protocol
 
-**Version:** 1.0.0
+**Version:** 1.2.0
 **Status:** ACTIVE
 **Trigger Hashtag:** `#caryff`
 
@@ -43,7 +43,12 @@ Our workflow is a hybrid of waterfall planning and agile execution, divided into
 - **`#nochange`**: For discussion only; no code will be changed.
 - **`#checkpoint [desc]`**: Saves the current state of all files.
 - **`#delete [file_path]`**: Deletes a file.
-- **`#feature`**: Docket type for a new capability.
-- **`#bug`**: Docket type for an error report.
-- **`#refactor`**: Docket type for non-functional code improvements.
-- **`#ui`**: Docket type for visual design changes.
+
+## Docket Types
+- **`#feature`**: A request for a new capability.
+- **`#bug`**: A report of something working incorrectly.
+- **`#refactor`**: A request for non-functional code improvements.
+- **`#ui`**: A request focused purely on visual design changes.
+- **`#spike`**: A task to resolve uncertainty. Must be sub-categorized:
+    - **`#research-spike`**: A time-boxed task to investigate a problem and produce a research document or proof-of-concept. Does not stop other sprint work.
+    - **`#blocker-spike`**: A critical issue that halts all other sprint work until it is resolved.
