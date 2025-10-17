@@ -297,15 +297,14 @@ export async function getAIAnalysis(userInput: UserInput): Promise<AnalysisResul
     });
 
     const jsonString = result.text;
-    // We explicitly cast here after parsing, trusting the API conforms to the schema.
-    const partialResult = JSON.parse(jsonString) as Omit<AnalysisResult, 'id' | 'savedAt' | 'userInput'>;
+    // FIX: Changed how the result is constructed to align with optional id/savedAt properties.
+    // The AI result doesn't contain id, savedAt, or userInput, so we construct the object accordingly.
+    const partialResult = JSON.parse(jsonString) as Omit<AnalysisResult, 'userInput' | 'id' | 'savedAt'>;
     
-    // Combine the AI result with the user input and temporary IDs
+    // Combine the AI result with the user input. id and savedAt will be added upon saving.
     const analysisResult: AnalysisResult = {
       ...partialResult,
       userInput: userInput,
-      id: '', // Will be assigned on save
-      savedAt: '', // Will be assigned on save
     };
     
     return analysisResult;

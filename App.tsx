@@ -1,16 +1,6 @@
-
-import React, { useState, useEffect } from 'react';
-import { getAIAnalysis } from './src/services/geminiService';
-import { authService } from './src/services/authService';
-import { analysisService } from './src/services/analysisService';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { User, UserInput, AnalysisResult } from './src/types';
 
-// Import Firebase
-// Fix: Update Firebase imports to v8 namespaced API.
-import firebase from 'firebase/app';
-import 'firebase/auth';
-
-// Import components
 import Header from './components/Header';
 import Hero from './components/Hero';
 import InputForm from './components/InputForm';
@@ -21,181 +11,181 @@ import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import Compare from './components/Compare';
 
-type View = 'home' | 'form' | 'loading' | 'results' | 'dashboard' | 'compare';
+import { getAIAnalysis } from './services/geminiService';
+import { authService } from './src/services/authService';
+import { analysisService } from './src/services/analysisService';
 
-function App() {
-  const [view, setView] = useState<View>('home');
+type View = 'hero' | 'form' | 'loading' | 'results' | 'dashboard' | 'compare';
+
+const App: React.FC = () => {
+  const [view, setView] = useState<View>('hero');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  
   const [savedAnalyses, setSavedAnalyses] = useState<AnalysisResult[]>([]);
   const [analysesToCompare, setAnalysesToCompare] = useState<AnalysisResult[]>([]);
-  const [isCurrentResultSaved, setIsCurrentResultSaved] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  const fetchAnalyses = useCallback(async (user: User) => {
+    try {
+      const analyses = await analysisService.getAnalyses(user.uid);
+      setSavedAnalyses(analyses);
+    } catch (err) {
+      console.error("Failed to fetch analyses:", err);
+      // Handle error display if necessary
+    }
+  }, []);
 
   useEffect(() => {
-    // Fix: Use v8 namespaced API for authentication.
-    const auth = firebase.auth();
-    // onAuthStateChanged is the real-time listener for auth state.
-    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
-      if (firebaseUser) {
-        // User is signed in.
-        const appUser: User = { uid: firebaseUser.uid, email: firebaseUser.email! };
-        setCurrentUser(appUser);
-        loadDashboard(appUser);
+    const unsubscribe = authService.onAuthStateChanged(user => {
+      setCurrentUser(user);
+      if (user) {
+        fetchAnalyses(user);
       } else {
-        // User is signed out.
-        setCurrentUser(null);
         setSavedAnalyses([]);
       }
     });
-
-    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, []);
-
-  const loadDashboard = async (user: User) => {
-    const analyses = await analysisService.getAnalysesForUser(user);
-    setSavedAnalyses(analyses);
-  };
-  
-  const handleStartAnalysis = () => {
-    setView('form');
-    setAnalysisResult(null);
-    setError(null);
-  };
+  }, [fetchAnalyses]);
 
   const handleAnalyze = async (data: UserInput) => {
+    setView('loading');
     setIsLoading(true);
     setError(null);
-    setView('loading');
+    setAnalysisResult(null);
+    setIsSaved(false);
     try {
       const result = await getAIAnalysis(data);
       setAnalysisResult(result);
-      setIsCurrentResultSaved(false);
       setView('results');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-      setView('results'); // Show error on results page
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred during analysis.');
+      setView('results');
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const handleShowAuth = () => {
-    setIsAuthModalOpen(true);
+
+  const handleSave = async (result: AnalysisResult) => {
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    const { id, savedAt, ...dataToSave } = result;
+    try {
+      const newId = await analysisService.saveAnalysis(currentUser.uid, dataToSave);
+      setAnalysisResult(prev => prev ? { ...prev, id: newId, savedAt: new Date().toISOString() } : null);
+      setIsSaved(true);
+      await fetchAnalyses(currentUser);
+    } catch (err) {
+      console.error("Failed to save analysis:", err);
+      // You could set an error state here to show in the UI
+    }
   };
 
-  const handleLogin = (user: User) => {
-    // The onAuthStateChanged listener will handle setting the user and loading the dashboard.
-    setCurrentUser(user); // Optimistically set user for faster UI feedback
+  const handleDelete = async (analysisId: string) => {
+     if (!currentUser || !analysisId) return;
+    try {
+      await analysisService.deleteAnalysis(currentUser.uid, analysisId);
+      await fetchAnalyses(currentUser);
+    } catch (err) {
+      console.error("Failed to delete analysis:", err);
+    }
+  };
+
+  const handleLoginSuccess = (user: User) => {
+    setCurrentUser(user);
     setIsAuthModalOpen(false);
-    loadDashboard(user);
+    fetchAnalyses(user);
   };
   
-  const handleSignup = (user: User) => {
-    // The onAuthStateChanged listener will handle setting the user.
-    setCurrentUser(user); // Optimistically set user
+  const handleSignupSuccess = (user: User) => {
+    setCurrentUser(user);
     setIsAuthModalOpen(false);
   };
 
   const handleLogout = async () => {
     await authService.logout();
-    // The onAuthStateChanged listener will handle clearing user state.
-    if (view === 'dashboard' || view === 'compare') {
-      setView('home');
-    }
-  };
-  
-  const handleShowDashboard = () => {
-    if (currentUser) {
-        loadDashboard(currentUser);
-        setView('dashboard');
-    } else {
-        handleShowAuth();
-    }
-  };
-  
-  const handleSaveAnalysis = async (resultToSave: AnalysisResult) => {
-    if (currentUser && resultToSave) {
-        try {
-            const savedAnalysis = await analysisService.saveAnalysis(currentUser, resultToSave);
-            setAnalysisResult(savedAnalysis); // Update result with new ID and savedAt
-            setIsCurrentResultSaved(true);
-            await loadDashboard(currentUser);
-        } catch (error) {
-            console.error("Failed to save analysis:", error);
-        }
-    } else if (!currentUser) {
-        handleShowAuth();
-    }
-  };
-  
-  const handleDeleteAnalysis = async (analysisId: string) => {
-    if (currentUser && analysisId) {
-        await analysisService.deleteAnalysis(currentUser, analysisId);
-        await loadDashboard(currentUser); // Refresh dashboard
-    }
-  };
-  
-  const handleViewAnalysis = (analysis: AnalysisResult) => {
-      setAnalysisResult(analysis);
-      setIsCurrentResultSaved(true); // Since it comes from dashboard, it's saved
-      setView('results');
+    setCurrentUser(null);
+    setSavedAnalyses([]);
+    handleShowHome();
   };
 
+  const handleShowDashboard = () => {
+    setAnalysisResult(null);
+    setView('dashboard');
+  };
+  
+  const handleShowHome = () => {
+    setAnalysisResult(null);
+    setView('hero');
+  }
+
+  const handleStartNewAnalysis = () => {
+    setAnalysisResult(null);
+    setView('form');
+  }
+
+  const handleViewAnalysis = (analysis: AnalysisResult) => {
+    setAnalysisResult(analysis);
+    setIsSaved(true);
+    setView('results');
+  }
+  
   const handleCompare = (analysisIds: string[]) => {
-      const toCompare = savedAnalyses.filter(a => a.id && analysisIds.includes(a.id));
+      const toCompare = savedAnalyses.filter(a => analysisIds.includes(a.id!));
       setAnalysesToCompare(toCompare);
       setView('compare');
   };
 
   const renderContent = () => {
     switch (view) {
-      case 'home':
-        return <Hero onStartAnalysis={handleStartAnalysis} />;
+      case 'hero':
+        return <Hero onStartAnalysis={handleStartNewAnalysis} />;
       case 'form':
         return <InputForm onAnalyze={handleAnalyze} isLoading={isLoading} />;
       case 'loading':
         return <LoadingAnalysis />;
       case 'results':
-        return <Results result={analysisResult} error={error} currentUser={currentUser} onSave={handleSaveAnalysis} isSaved={isCurrentResultSaved} />;
+        return <Results error={error} result={analysisResult} currentUser={currentUser} onSave={handleSave} isSaved={isSaved} />;
       case 'dashboard':
-        return <Dashboard 
-                  analyses={savedAnalyses}
-                  onView={handleViewAnalysis}
-                  onDelete={handleDeleteAnalysis}
-                  onNewAnalysis={handleStartAnalysis}
-                  onCompare={handleCompare}
-                />;
+        return <Dashboard analyses={savedAnalyses} onView={handleViewAnalysis} onDelete={handleDelete} onNewAnalysis={handleStartNewAnalysis} onCompare={handleCompare} />;
       case 'compare':
         return <Compare analyses={analysesToCompare} onBack={handleShowDashboard} />;
       default:
-        return <Hero onStartAnalysis={handleStartAnalysis} />;
+        return <Hero onStartAnalysis={handleStartNewAnalysis} />;
     }
   };
+  
+  const showNewAnalysisButton = view !== 'hero' && view !== 'form' && view !== 'loading';
 
   return (
-    <div className="bg-slate-900 text-white min-h-screen font-sans bg-gradient-to-br from-indigo-950 via-slate-900 to-black">
-      <Header 
-        showNewAnalysisButton={view !== 'home' && view !== 'form'}
-        onNewAnalysis={handleStartAnalysis}
-        currentUser={currentUser}
-        onShowAuth={handleShowAuth}
-        onLogout={handleLogout}
-        onShowDashboard={handleShowDashboard}
-      />
-      <main className="container mx-auto px-4 py-8">
-        {renderContent()}
-      </main>
-      <Footer />
-      <Auth 
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onLoginSuccess={handleLogin}
-        onSignupSuccess={handleSignup}
-      />
+    <div className="bg-slate-900 text-white min-h-screen font-sans bg-grid">
+       <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/50 to-slate-900 z-0"></div>
+       <div className="relative z-10">
+          <Header 
+            showNewAnalysisButton={showNewAnalysisButton}
+            onNewAnalysis={handleStartNewAnalysis}
+            currentUser={currentUser}
+            onShowAuth={() => setIsAuthModalOpen(true)}
+            onLogout={handleLogout}
+            onShowDashboard={handleShowDashboard}
+          />
+          <main className="container mx-auto px-4 py-8">
+            {renderContent()}
+          </main>
+          <Footer />
+          <Auth 
+            isOpen={isAuthModalOpen}
+            onClose={() => setIsAuthModalOpen(false)}
+            onLoginSuccess={handleLoginSuccess}
+            onSignupSuccess={handleSignupSuccess}
+          />
+       </div>
     </div>
   );
 }

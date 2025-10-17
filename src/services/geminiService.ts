@@ -298,7 +298,7 @@ export async function getAIAnalysis(userInput: UserInput): Promise<AnalysisResul
 
     const jsonString = result.text;
     // We explicitly cast here after parsing, trusting the API conforms to the schema.
-    const partialResult = JSON.parse(jsonString) as Omit<AnalysisResult, 'id' | 'savedAt' | 'userInput'>;
+    const partialResult = JSON.parse(jsonString) as Omit<AnalysisResult, 'userInput'>;
     
     // Combine the AI result with the user input
     const analysisResult: AnalysisResult = {

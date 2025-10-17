@@ -133,8 +133,9 @@ export interface Methodology {
 }
 
 export interface AnalysisResult {
-  id: string; // Unique identifier for the analysis
-  savedAt: string; // ISO string of when it was saved
+  // FIX: Make id and savedAt optional, as they only exist for saved analyses.
+  id?: string; // Unique identifier for the analysis
+  savedAt?: string; // ISO string of when it was saved
   userInput: UserInput; // Storing the original input with the result
   personalBuyingReadinessScore: number;
   affordability: AffordabilityAnalysis;
