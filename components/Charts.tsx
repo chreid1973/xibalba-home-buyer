@@ -2,10 +2,12 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import type { MarketData } from '../types';
 import InfoTooltip from './InfoTooltip';
+import Citation from './Citation';
 
 interface MarketForecastChartProps {
   marketData: MarketData;
   tooltipText?: string;
+  dataSource?: string;
 }
 
 const currencyFormatter = (value: number) => {
@@ -18,14 +20,14 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return (
       <div className="bg-white p-2 border border-slate-200 rounded shadow-lg">
         <p className="label text-sm font-bold text-slate-700">{`${label}`}</p>
-        <p className="intro text-sm text-cyan-600">{`Price : ${currencyFormatter(payload[0].value)}`}</p>
+        <p className="intro text-sm text-purple-600">{`Price : ${currencyFormatter(payload[0].value)}`}</p>
       </div>
     );
   }
   return null;
 };
 
-const MarketForecastChart: React.FC<MarketForecastChartProps> = ({ marketData, tooltipText }) => {
+const MarketForecastChart: React.FC<MarketForecastChartProps> = ({ marketData, tooltipText, dataSource }) => {
   if (!marketData || !marketData.averageHomePrice || marketData.averageHomePrice.length === 0) {
     return null;
   }
@@ -41,6 +43,7 @@ const MarketForecastChart: React.FC<MarketForecastChartProps> = ({ marketData, t
         <div className="flex justify-center items-center mb-2">
             <h3 className="font-bold text-center text-slate-700">Average Home Price Forecast</h3>
             {tooltipText && <InfoTooltip text={tooltipText} />}
+            {dataSource && <Citation title="Data Source" content={dataSource} />}
         </div>
         <div className="flex-grow h-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -51,21 +54,21 @@ const MarketForecastChart: React.FC<MarketForecastChartProps> = ({ marketData, t
                 <Tooltip content={<CustomTooltip />} />
                 
                 {/* Historical Data Line */}
-                <Line data={historicalData} type="monotone" dataKey="price" name="Historical Price" stroke="#38bdf8" strokeWidth={3} activeDot={{ r: 8 }} dot={false} />
+                <Line data={historicalData} type="monotone" dataKey="price" name="Historical Price" stroke="#8b5cf6" strokeWidth={3} activeDot={{ r: 8 }} dot={false} />
                 
                 {/* Forecast Data Line */}
-                <Line dataKey="price" name="Forecast Price" stroke="#38bdf8" strokeWidth={3} strokeDasharray="5 5" activeDot={{ r: 8 }} dot={false}/>
+                <Line dataKey="price" name="Forecast Price" stroke="#8b5cf6" strokeWidth={3} strokeDasharray="5 5" activeDot={{ r: 8 }} dot={false}/>
 
                 {forecastStartQuarter && <ReferenceLine x={forecastStartQuarter} stroke="#94a3b8" strokeDasharray="3 3" />}
                 
                  <Legend verticalAlign="bottom" height={36} content={() => (
                      <div className="flex justify-center items-center gap-6 text-sm text-slate-500 mt-4">
                         <div className="flex items-center gap-2">
-                             <svg className="w-4 h-1" viewBox="0 0 16 4"><path d="M0 2 H16" stroke="#38bdf8" strokeWidth="3" /></svg>
+                             <svg className="w-4 h-1" viewBox="0 0 16 4"><path d="M0 2 H16" stroke="#8b5cf6" strokeWidth="3" /></svg>
                             <span>Historical</span>
                         </div>
                          <div className="flex items-center gap-2">
-                             <svg className="w-4 h-1" viewBox="0 0 16 4"><path d="M0 2 H16" stroke="#38bdf8" strokeWidth="3" strokeDasharray="5 5" /></svg>
+                             <svg className="w-4 h-1" viewBox="0 0 16 4"><path d="M0 2 H16" stroke="#8b5cf6" strokeWidth="3" strokeDasharray="5 5" /></svg>
                             <span>Forecast</span>
                         </div>
                     </div>

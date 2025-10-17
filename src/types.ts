@@ -27,6 +27,7 @@ export interface MarketDataPoint {
   price: number;
 }
 export interface MarketData {
+  dataSource: string; // e.g., "Local MLS Data, Federal Reserve Economic Data"
   averageHomePrice: MarketDataPoint[];
   marketHealthIndex: number;
   forecastSummary: string;
@@ -51,9 +52,16 @@ export interface School {
   rating: number; // A score out of 10
   type: 'Elementary' | 'Middle' | 'High';
   distance: string; // e.g., "1.2 km"
+  address: string; // e.g., "60 Ogilvie St"
+  city: string; // e.g., "Toronto"
 }
 
 export interface LocationAnalysis {
+  dataSources: {
+    scores: string; // e.g., "U.S. Census Bureau, Local Crime Statistics"
+    schools: string; // e.g., "GreatSchools.org, Provincial Education Rankings"
+    amenities: string; // e.g., "Google Maps API, OpenStreetMap"
+  };
   scores: {
     affordability: ScoreDetail;
     jobMarket: ScoreDetail;
@@ -111,6 +119,13 @@ export interface BreakEvenAnalysis {
     };
 }
 
+export interface Methodology {
+    readinessScore: string;
+    affordability: string;
+    totalCostOfOwnership: string;
+    breakEvenAnalysis: string;
+}
+
 export interface AnalysisResult {
   personalBuyingReadinessScore: number;
   affordability: AffordabilityAnalysis;
@@ -119,4 +134,5 @@ export interface AnalysisResult {
   totalCostOfOwnership: TotalCostOfOwnership;
   financialAdvice: FinancialAdvice;
   breakEvenAnalysis: BreakEvenAnalysis;
+  methodology: Methodology;
 }

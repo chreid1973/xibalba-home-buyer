@@ -1,12 +1,14 @@
 import React from 'react';
 import type { AffordabilityAnalysis } from '../src/types';
 import InfoTooltip from './InfoTooltip';
+import Citation from './Citation';
 
 interface AffordabilityIndexProps {
   priceToIncomeRatio: AffordabilityAnalysis['priceToIncomeRatio'];
+  methodology: string;
 }
 
-const AffordabilityIndex: React.FC<AffordabilityIndexProps> = ({ priceToIncomeRatio }) => {
+const AffordabilityIndex: React.FC<AffordabilityIndexProps> = ({ priceToIncomeRatio, methodology }) => {
     if (!priceToIncomeRatio) return null;
 
     const { user, cityAverage, summary } = priceToIncomeRatio;
@@ -20,8 +22,8 @@ const AffordabilityIndex: React.FC<AffordabilityIndexProps> = ({ priceToIncomeRa
                     <span className="text-slate-300">{label}</span>
                     <span className={`font-bold ${isUser ? 'text-white' : 'text-slate-300'}`}>{value.toFixed(1)}x</span>
                 </div>
-                <div className="w-full bg-slate-600 rounded-full h-2.5">
-                    <div className={`${isUser ? 'bg-cyan-500' : 'bg-slate-400'} h-2.5 rounded-full`} style={{ width: width, transition: 'width 0.5s ease-out' }}></div>
+                <div className="w-full bg-slate-700 rounded-full h-2.5">
+                    <div className={`${isUser ? 'bg-purple-500' : 'bg-slate-500'} h-2.5 rounded-full`} style={{ width: width, transition: 'width 0.5s ease-out' }}></div>
                 </div>
             </div>
         )
@@ -32,6 +34,7 @@ const AffordabilityIndex: React.FC<AffordabilityIndexProps> = ({ priceToIncomeRa
             <div className="flex items-center mb-3">
                 <h4 className="font-semibold text-slate-300">Price-to-Income Ratio</h4>
                 <InfoTooltip text="This ratio compares the home price to your annual income. A lower ratio is generally better. This chart compares your ratio for your target home to the city's average." />
+                <Citation title="Methodology" content={methodology} isDarkTheme={true}/>
             </div>
             <div className="space-y-2">
                 <Bar label="Your Ratio" value={user} isUser />

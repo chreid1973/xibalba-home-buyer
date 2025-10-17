@@ -1,8 +1,10 @@
 import React from 'react';
 import type { School } from '../src/types';
+import Citation from './Citation';
 
 interface SchoolInfoProps {
   schools: School[];
+  dataSource: string;
 }
 
 const StarRating = ({ rating }: { rating: number }) => {
@@ -28,25 +30,35 @@ const StarRating = ({ rating }: { rating: number }) => {
   );
 };
 
-const SchoolInfo: React.FC<SchoolInfoProps> = ({ schools }) => {
+const SchoolInfo: React.FC<SchoolInfoProps> = ({ schools, dataSource }) => {
   if (!schools || schools.length === 0) {
     return (
-      <div className="bg-slate-800 p-6 rounded-lg shadow-lg h-full flex flex-col items-center justify-center text-center">
-        <h3 className="text-xl font-bold text-cyan-400 mb-4">Top Nearby Schools</h3>
+      <div className="bg-black/20 border border-purple-500/10 p-6 rounded-lg shadow-lg h-full flex flex-col items-center justify-center text-center">
+        <h3 className="text-xl font-bold text-purple-400 mb-4">Top Nearby Schools</h3>
         <p className="text-slate-400">School data is not available for this location.</p>
       </div>
     );
   }
 
+  const generateMapsUrl = (school: School) => {
+    const query = encodeURIComponent(`${school.name}, ${school.address}, ${school.city}`);
+    return `https://www.google.com/maps/search/?api=1&query=${query}`;
+  };
+
   return (
-    <div className="bg-slate-800 p-6 rounded-lg shadow-lg h-full">
-      <h3 className="text-xl font-bold text-cyan-400 mb-4">Top Nearby Schools</h3>
+    <div className="bg-black/20 border border-purple-500/10 p-6 rounded-lg shadow-lg h-full">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center">
+            <h3 className="text-xl font-bold text-purple-400">Top Nearby Schools</h3>
+            <Citation title="Data Source" content={dataSource} isDarkTheme={true} />
+        </div>
+      </div>
       <ul className="space-y-4">
         {schools.map((school, index) => (
           <li key={index} className="flex items-start">
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 rounded-full bg-cyan-900/50 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-400" viewBox="0 0 20 20" fill="currentColor">
+              <div className="w-10 h-10 rounded-full bg-purple-900/50 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3.5a1 1 0 00.002 1.84L9 9.583V14.5a1 1 0 001 1h.093a1 1 0 00.907-.59L15 8.333V5.92a1 1 0 00-.606-.912l-7-3.5z" />
                   <path d="M17 5.92v2.413l-5 2.5v5.083l5-2.5V8.833a1 1 0 00-.394-.809l-7-3.5a1 1 0 00-.814-.002l-7 3.5A1 1 0 003 5.92v8.167a1 1 0 001 1h12a1 1 0 001-1V5.92a1 1 0 00-.394-.809l-7-3.5z" />
                 </svg>
@@ -62,6 +74,17 @@ const SchoolInfo: React.FC<SchoolInfoProps> = ({ schools }) => {
                 <span className="text-sm text-slate-400 ml-2">({school.rating.toFixed(1)}/10)</span>
               </div>
               <p className="text-sm text-slate-400">{school.type}</p>
+              <a 
+                href={generateMapsUrl(school)} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-xs text-purple-400 hover:text-purple-300 hover:underline inline-flex items-center mt-1"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                View on Google Maps
+              </a>
             </div>
           </li>
         ))}

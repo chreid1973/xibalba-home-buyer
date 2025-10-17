@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { UserInput, AnalysisResult } from './src/types';
 import { getAIAnalysis } from './src/services/geminiService';
@@ -7,12 +8,12 @@ import Hero from './components/Hero';
 import InputForm from './components/InputForm';
 import Results from './components/Results';
 import Footer from './components/Footer';
+import LoadingAnalysis from './components/LoadingAnalysis';
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'hero' | 'form' | 'results'>('hero');
+  const [view, setView] = useState<'hero' | 'form' | 'loading' | 'results'>('hero');
   const [userInput, setUserInput] = useState<UserInput | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleStartAnalysis = () => setView('form');
@@ -25,10 +26,9 @@ const App: React.FC = () => {
   };
 
   const handleAnalyze = async (data: UserInput) => {
-    setIsLoading(true);
-    setError(null);
     setUserInput(data);
-    setView('results');
+    setView('loading');
+    setError(null);
 
     try {
       const result = await getAIAnalysis(data);
@@ -38,7 +38,7 @@ const App: React.FC = () => {
       const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
       setError(`An error occurred while analyzing your data. Please try again. Details: ${errorMessage}`);
     } finally {
-      setIsLoading(false);
+      setView('results');
     }
   };
   
@@ -51,10 +51,11 @@ const App: React.FC = () => {
            <div className="max-w-4xl mx-auto animate-fade-in">
              <div className="grid md:grid-cols-2 gap-8 items-start">
                 <div className="md:col-span-1">
-                    <InputForm onAnalyze={handleAnalyze} isLoading={isLoading} />
+                    {/* Fix: This comparison was causing a TypeScript error because `view` is always 'form' in this branch. Given the app transitions to a full-screen loader, the button's loading state is not used. */}
+                    <InputForm onAnalyze={handleAnalyze} isLoading={false} />
                 </div>
-                <div className="md:col-span-1 text-slate-300 p-6 bg-slate-800/50 rounded-lg hidden md:block">
-                    <h3 className="text-xl font-bold text-cyan-400 mb-4">How It Works</h3>
+                <div className="md:col-span-1 text-slate-300 p-6 bg-black/20 border border-purple-500/20 rounded-lg hidden md:block">
+                    <h3 className="text-xl font-bold text-purple-400 mb-4">How It Works</h3>
                     <p className="text-slate-400 mb-4">
                         Unlock expert-level insights for your home buying journey. Our AI co-pilot synthesizes complex financial data and real-time market trends into a clear, personalized strategy, empowering you to make a confident and informed decision.
                     </p>
@@ -68,15 +69,17 @@ const App: React.FC = () => {
             </div>
            </div>
         );
+      case 'loading':
+          return <LoadingAnalysis />;
       case 'results':
-        return <Results isLoading={isLoading} error={error} result={analysisResult} userInput={userInput} />;
+        return <Results error={error} result={analysisResult} userInput={userInput} />;
       default:
         return <Hero onStartAnalysis={handleStartAnalysis} />;
     }
   };
 
   return (
-    <div className="bg-slate-900 text-white min-h-screen font-sans antialiased">
+    <div className="bg-transparent text-white min-h-screen font-sans antialiased">
       <Header showNewAnalysisButton={view === 'results'} onNewAnalysis={handleNewAnalysis} />
       <main className="container mx-auto px-4 py-8">
         {renderContent()}

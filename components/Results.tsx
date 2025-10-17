@@ -17,29 +17,29 @@ import ScenarioSimulator from './ScenarioSimulator';
 // Fix: Import from the newly created component file
 import BreakEvenAnalysis from './BreakEvenAnalysis';
 import Modal from './Modal';
+import Citation from './Citation';
 
 // Import calculation utility
 // Fix: Import from the newly created utility file and correct path
 import { calculateMonthlyMortgage } from '../src/utils/financialCalculations';
 
 interface ResultsProps {
-  isLoading: boolean;
   error: string | null;
   result: AnalysisResult | null;
   userInput: UserInput | null;
 }
 
 // A component for displaying lists (pros, cons, steps)
-const InfoList: React.FC<{ title: string; items: string[]; icon: React.ReactNode; color: string }> = ({ title, items, icon, color }) => (
-  <div className="bg-slate-800/50 p-4 rounded-lg">
+const InfoList: React.FC<{ title: string; items: string[]; icon: React.ReactNode; color: string; delay: number }> = ({ title, items, icon, color, delay }) => (
+  <div className="bg-black/20 border border-purple-500/10 p-4 rounded-lg">
     <h3 className={`text-lg font-semibold mb-3 flex items-center ${color}`}>
       {icon}
       <span className="ml-2">{title}</span>
     </h3>
-    <ul className="space-y-2">
+    <ul className="space-y-2 animate-stagger-in">
       {items.map((item, index) => (
-        <li key={index} className="flex items-start text-sm text-slate-300">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+        <li key={index} className="flex items-start text-sm text-slate-300" style={{ animationDelay: `${delay + index * 100}ms` }}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-400 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
           <span>{item}</span>
@@ -50,7 +50,7 @@ const InfoList: React.FC<{ title: string; items: string[]; icon: React.ReactNode
 );
 
 
-const Results: React.FC<ResultsProps> = ({ isLoading, error, result, userInput }) => {
+const Results: React.FC<ResultsProps> = ({ error, result, userInput }) => {
     
     // State for the scenario simulator
     const [simulatedInput, setSimulatedInput] = useState<{
@@ -64,6 +64,8 @@ const Results: React.FC<ResultsProps> = ({ isLoading, error, result, userInput }
     
     // Derived state for display, based on original result or simulated data
     const [displayData, setDisplayData] = useState<AnalysisResult | null>(result);
+    const [readinessGaugeText, setReadinessGaugeText] = useState('');
+
 
     useEffect(() => {
         if (result && userInput) {
@@ -75,6 +77,7 @@ const Results: React.FC<ResultsProps> = ({ isLoading, error, result, userInput }
             };
             setSimulatedInput(initialSimState);
             setDisplayData(result);
+            setReadinessGaugeText(result.financialAdvice.chartInsights.readinessGauge);
         }
     }, [result, userInput]);
 
@@ -110,33 +113,43 @@ const Results: React.FC<ResultsProps> = ({ isLoading, error, result, userInput }
         // Simple heuristic: adjust score by up to +/- 1.5 based on affordability
         let scoreAdjustment = (affordabilityRatio - 1) * 5; 
         scoreAdjustment = Math.max(-1.5, Math.min(1.5, scoreAdjustment));
-        newDisplayData.personalBuyingReadinessScore = Math.max(1, Math.min(10, originalScore + scoreAdjustment));
+        const newScore = Math.max(1, Math.min(10, originalScore + scoreAdjustment));
+        newDisplayData.personalBuyingReadinessScore = newScore;
 
+        // Update the readiness gauge text
+        const originalText = result.financialAdvice.chartInsights.readinessGauge;
+        const isDifferent = Math.abs(newScore - originalScore) >= 0.1;
+        if (isDifferent) {
+            const changeDirection = newScore > originalScore ? 'improved' : 'decreased';
+            
+            const originalScoreText = originalScore.toFixed(1).replace('.', '\\.');
+            
+            // This regex is designed to be flexible and robustly find various ways the AI might phrase the score
+            // at the beginning of the sentence, specifically targeting the original score value.
+            const scoreRemovalRegex = new RegExp(
+                `^(?:(?:Your|The|A)\\s+)?(?:\\w+\\s+)?(?:readiness\\s+)?score(?:\\s+of)?\\s+${originalScoreText}\\s*`,
+                'i'
+            );
+
+            // Replace the old score phrase only if it's found, otherwise use the original text.
+            const cleanedOriginalText = originalText.replace(scoreRemovalRegex, 'This score ');
+
+            setReadinessGaugeText(`With these adjustments, your score has ${changeDirection} to ${newScore.toFixed(1)}. ${cleanedOriginalText}`);
+        } else {
+            setReadinessGaugeText(originalText);
+        }
 
         setDisplayData(newDisplayData);
 
     }, [simulatedInput, result, userInput]);
 
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center text-center py-20 animate-fade-in">
-                <svg className="animate-spin h-12 w-12 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <h2 className="text-3xl font-bold text-white mt-6">Crafting Your Analysis...</h2>
-                <p className="text-slate-300 mt-2">Our AI is analyzing market data, your finances, and location details. This might take a moment.</p>
-            </div>
-        );
-    }
-    
     if (error) {
         return (
             <div className="text-center py-20 animate-fade-in bg-red-900/20 border border-red-500/30 p-8 rounded-lg">
                 <h2 className="text-3xl font-bold text-red-400 mb-4">Analysis Failed</h2>
                 <p className="text-slate-300 mb-6">We encountered an error while generating your report. Please try again later.</p>
-                <pre className="text-left bg-slate-800 p-4 rounded-md text-sm text-red-300 overflow-x-auto">
+                <pre className="text-left bg-slate-900 p-4 rounded-md text-sm text-red-300 overflow-x-auto">
                     <code>{error}</code>
                 </pre>
             </div>
@@ -152,13 +165,13 @@ const Results: React.FC<ResultsProps> = ({ isLoading, error, result, userInput }
         );
     }
 
-    const { financialAdvice, affordability, marketAnalysis, locationAnalysis, totalCostOfOwnership, personalBuyingReadinessScore, breakEvenAnalysis } = displayData;
+    const { financialAdvice, affordability, marketAnalysis, locationAnalysis, totalCostOfOwnership, personalBuyingReadinessScore, breakEvenAnalysis, methodology } = displayData;
 
     return (
         <div className="animate-fade-in space-y-8">
             {/* Header Summary */}
-            <header className="bg-slate-800/50 p-6 rounded-lg text-center">
-                <p className="text-cyan-400 font-semibold">Overall Recommendation</p>
+            <header className="bg-black/20 border border-purple-500/20 p-6 rounded-lg text-center shadow-lg">
+                <p className="text-purple-400 font-semibold">Overall Recommendation</p>
                 <h2 className="text-4xl font-extrabold text-white my-2">{financialAdvice.overallRecommendation}</h2>
                 <p className="text-slate-300 max-w-3xl mx-auto">{financialAdvice.chartInsights.readinessGauge}</p>
             </header>
@@ -168,7 +181,7 @@ const Results: React.FC<ResultsProps> = ({ isLoading, error, result, userInput }
                 {/* Left Column */}
                 <aside className="lg:col-span-1 space-y-8">
                     {simulatedInput && result && (
-                         <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
+                         <div className="bg-black/20 border border-purple-500/10 p-6 rounded-lg shadow-lg">
                              <ScenarioSimulator
                                 homePrice={simulatedInput.homePrice}
                                 downPayment={simulatedInput.downPayment}
@@ -187,30 +200,37 @@ const Results: React.FC<ResultsProps> = ({ isLoading, error, result, userInput }
                          </div>
                     )}
                    
-                    <InfoList title="Pros" items={financialAdvice.pros} icon={<span className="text-green-400">👍</span>} color="text-green-400" />
-                    <InfoList title="Cons" items={financialAdvice.cons} icon={<span className="text-red-400">👎</span>} color="text-red-400" />
-                    <InfoList title="Actionable Next Steps" items={financialAdvice.actionableSteps} icon={<span className="text-cyan-400">🚀</span>} color="text-cyan-400" />
+                    <InfoList title="Pros" items={financialAdvice.pros} icon={<span className="text-green-400">👍</span>} color="text-green-400" delay={0} />
+                    <InfoList title="Cons" items={financialAdvice.cons} icon={<span className="text-red-400">👎</span>} color="text-red-400" delay={200} />
+                    <InfoList title="Actionable Next Steps" items={financialAdvice.actionableSteps} icon={<span className="text-purple-400">🚀</span>} color="text-purple-400" delay={400} />
                     
-                    <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-                        <AffordabilityIndex priceToIncomeRatio={affordability.priceToIncomeRatio} />
+                    <div className="bg-black/20 border border-purple-500/10 p-6 rounded-lg shadow-lg">
+                        <AffordabilityIndex 
+                            priceToIncomeRatio={affordability.priceToIncomeRatio} 
+                            methodology={methodology.affordability}
+                        />
                     </div>
                 </aside>
 
                 {/* Right Column (Charts) */}
                 <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-md text-slate-800 flex flex-col justify-between min-h-[300px]">
+                        <div className="flex justify-center items-center">
+                            <h3 className="font-bold text-center text-slate-700">Personal Buying Readiness</h3>
+                            <Citation title="Methodology" content={methodology.readinessScore} />
+                        </div>
                         <MarketGauge score={personalBuyingReadinessScore} />
-                        <p className="text-xs text-slate-500 text-center mt-2">{financialAdvice.chartInsights.readinessGauge}</p>
+                        <p className="text-xs text-slate-500 text-center mt-2 px-4">{readinessGaugeText}</p>
                     </div>
 
                     <div className="bg-white p-6 rounded-lg shadow-md text-slate-800 flex flex-col min-h-[300px]">
-                        <OwnershipCostChart tco={totalCostOfOwnership} pith={affordability.monthlyPITH} />
-                         <p className="text-xs text-slate-500 text-center mt-2">{financialAdvice.chartInsights.ownershipCost}</p>
+                        <OwnershipCostChart tco={totalCostOfOwnership} pith={affordability.monthlyPITH} methodology={methodology.totalCostOfOwnership} />
+                         <p className="text-xs text-slate-500 text-center mt-2 px-4">{financialAdvice.chartInsights.ownershipCost}</p>
                     </div>
                     
                     <div className="bg-white p-6 rounded-lg shadow-md text-slate-800 flex flex-col min-h-[300px]">
-                       <LocationRadarChart scores={locationAnalysis.scores} />
-                       <p className="text-xs text-slate-500 text-center mt-2">{financialAdvice.chartInsights.locationRadar}</p>
+                       <LocationRadarChart scores={locationAnalysis.scores} dataSource={locationAnalysis.dataSources.scores} />
+                       <p className="text-xs text-slate-500 text-center mt-2 px-4">{financialAdvice.chartInsights.locationRadar}</p>
                     </div>
                     
                     <div className="bg-white p-6 rounded-lg shadow-md text-slate-800 flex flex-col min-h-[300px]">
@@ -218,7 +238,11 @@ const Results: React.FC<ResultsProps> = ({ isLoading, error, result, userInput }
                     </div>
 
                     <div className="bg-white p-6 rounded-lg shadow-md text-slate-800 flex flex-col min-h-[300px]">
-                        <MarketForecastChart marketData={marketAnalysis} tooltipText={financialAdvice.chartInsights.homePriceForecast} />
+                        <MarketForecastChart 
+                            marketData={marketAnalysis} 
+                            tooltipText={financialAdvice.chartInsights.homePriceForecast}
+                            dataSource={marketAnalysis.dataSource}
+                        />
                     </div>
 
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -236,20 +260,20 @@ const Results: React.FC<ResultsProps> = ({ isLoading, error, result, userInput }
             <div className="space-y-8">
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                     <div className="lg:col-span-3">
-                        <NeighborhoodMap center={locationAnalysis.neighborhoodCoords} amenities={locationAnalysis.amenities} />
+                        <NeighborhoodMap center={locationAnalysis.neighborhoodCoords} amenities={locationAnalysis.amenities} dataSource={locationAnalysis.dataSources.amenities} />
                     </div>
                     <div className="lg:col-span-2">
-                        <SchoolInfo schools={locationAnalysis.topSchools} />
+                        <SchoolInfo schools={locationAnalysis.topSchools} dataSource={locationAnalysis.dataSources.schools} />
                     </div>
                 </div>
 
-                {breakEvenAnalysis && <BreakEvenAnalysis data={breakEvenAnalysis} />}
+                {breakEvenAnalysis && <BreakEvenAnalysis data={breakEvenAnalysis} methodology={methodology.breakEvenAnalysis} />}
 
             </div>
 
             <Modal isOpen={isMapModalOpen} onClose={() => setMapModalOpen(false)}>
                  <div className="h-[80vh] w-full">
-                    <NeighborhoodMap center={locationAnalysis.neighborhoodCoords} amenities={locationAnalysis.amenities} />
+                    <NeighborhoodMap center={locationAnalysis.neighborhoodCoords} amenities={locationAnalysis.amenities} dataSource={locationAnalysis.dataSources.amenities} />
                  </div>
             </Modal>
         </div>

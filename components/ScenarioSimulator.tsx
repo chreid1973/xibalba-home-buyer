@@ -41,7 +41,7 @@ const ScenarioSimulator: React.FC<ScenarioSimulatorProps> = ({
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-cyan-400">Scenario Simulator</h3>
+        <h3 className="text-lg font-semibold text-purple-400">Scenario Simulator</h3>
         <button onClick={onReset} className="text-xs text-slate-400 hover:text-white transition-colors">Reset</button>
       </div>
       <div className="space-y-4">
@@ -59,7 +59,7 @@ const ScenarioSimulator: React.FC<ScenarioSimulatorProps> = ({
             step={1000}
             value={homePrice}
             onChange={handlePriceChange}
-            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
           />
         </div>
         <div>
@@ -76,7 +76,7 @@ const ScenarioSimulator: React.FC<ScenarioSimulatorProps> = ({
             step={500}
             value={downPayment}
             onChange={handleDownPaymentChange}
-            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
           />
         </div>
         <div>
@@ -93,7 +93,7 @@ const ScenarioSimulator: React.FC<ScenarioSimulatorProps> = ({
             step="0.1"
             value={interestRate}
             onChange={handleInterestRateChange}
-            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
           />
         </div>
       </div>

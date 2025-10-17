@@ -16,7 +16,7 @@ const CustomTooltip = ({ active, payload, label, formatter }: any) => {
       return (
         <div className="bg-white p-2 border border-slate-200 rounded shadow-lg text-sm">
           <p className="font-bold text-slate-700">{label}</p>
-          <p className="text-cyan-600">{formatter(payload[0].value)}</p>
+          <p className="text-purple-600">{formatter(payload[0].value)}</p>
         </div>
       );
     }
@@ -44,14 +44,14 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, dataKey, xAxisKey, title,
             <AreaChart data={data} margin={{ top: 5, right: 20, left: -25, bottom: 5 }}>
                 <defs>
                     <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
                     </linearGradient>
                 </defs>
                 <XAxis dataKey={xAxisKey} stroke="#94a3b8" fontSize={11} />
                 <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={formatter} domain={['dataMin - 1', 'dataMax + 1']} />
                 <Tooltip content={<CustomTooltip formatter={formatter} />} />
-                <Area type="monotone" dataKey={dataKey} stroke="#06b6d4" fillOpacity={1} fill="url(#colorTrend)" />
+                <Area type="monotone" dataKey={dataKey} stroke="#a855f7" fillOpacity={1} fill="url(#colorTrend)" />
             </AreaChart>
           </ResponsiveContainer>
       </div>

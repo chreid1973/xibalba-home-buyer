@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { Amenity } from '../src/types';
 import InfoTooltip from './InfoTooltip';
+import Citation from './Citation';
 
 // Declare google global for TypeScript
 declare const google: any;
@@ -11,6 +12,7 @@ interface NeighborhoodMapProps {
     lon: number;
   };
   amenities: Amenity[];
+  dataSource: string;
 }
 
 const amenityStyles: Record<Amenity['type'], { icon: string; color: string; className: string }> = {
@@ -40,7 +42,7 @@ const mapStyle = [
 ];
 
 
-const NeighborhoodMap: React.FC<NeighborhoodMapProps> = ({ center, amenities }) => {
+const NeighborhoodMap: React.FC<NeighborhoodMapProps> = ({ center, amenities, dataSource }) => {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -103,7 +105,7 @@ const NeighborhoodMap: React.FC<NeighborhoodMapProps> = ({ center, amenities }) 
                             <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#000" flood-opacity="0.5"/>
                         </filter>
                     </defs>
-                    <path fill="#06b6d4" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" style="filter:url(#shadow)"/>
+                    <path fill="#a855f7" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" style="filter:url(#shadow)"/>
                 </svg>
             `;
 
@@ -167,7 +169,7 @@ const NeighborhoodMap: React.FC<NeighborhoodMapProps> = ({ center, amenities }) 
 
     if (!center || !amenities) {
         return (
-            <div className="bg-slate-800 p-6 rounded-lg shadow-lg h-full flex items-center justify-center min-h-[400px]">
+            <div className="bg-black/20 border border-purple-500/10 p-6 rounded-lg shadow-lg h-full flex items-center justify-center min-h-[400px]">
                 <p className="text-slate-400">Map data is not available.</p>
             </div>
         );
@@ -175,11 +177,11 @@ const NeighborhoodMap: React.FC<NeighborhoodMapProps> = ({ center, amenities }) 
     
     if (mapError) {
          return (
-            <div className="bg-slate-800 p-6 rounded-lg shadow-lg h-full flex flex-col min-h-[400px]">
+            <div className="bg-black/20 border border-purple-500/10 p-6 rounded-lg shadow-lg h-full flex flex-col min-h-[400px]">
                 <div className="flex justify-between items-center mb-4">
-                     <h3 className="text-xl font-bold text-cyan-400">Neighborhood Map</h3>
+                     <h3 className="text-xl font-bold text-purple-400">Neighborhood Map</h3>
                 </div>
-                <div className="relative flex-grow w-full h-full rounded-lg bg-slate-700/50 border border-yellow-500/30 flex flex-col items-center justify-center text-center p-6">
+                <div className="relative flex-grow w-full h-full rounded-lg bg-slate-800/50 border border-yellow-500/30 flex flex-col items-center justify-center text-center p-6">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-yellow-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
@@ -187,7 +189,7 @@ const NeighborhoodMap: React.FC<NeighborhoodMapProps> = ({ center, amenities }) 
                     <p className="text-slate-300 mt-2 text-sm max-w-md">
                         {mapError} This is usually caused by the API key configuration in your Google Cloud project.
                     </p>
-                    <div className="bg-slate-800 p-4 rounded-md mt-4 text-left text-sm">
+                    <div className="bg-slate-900 p-4 rounded-md mt-4 text-left text-sm">
                         <p className="font-semibold text-white">To fix this, you must:</p>
                         <ol className="list-decimal list-inside mt-2 space-y-1 text-slate-400">
                             <li>Go to your <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">Google Cloud Console</a>.</li>
@@ -205,14 +207,17 @@ const NeighborhoodMap: React.FC<NeighborhoodMapProps> = ({ center, amenities }) 
     }
 
     return (
-        <div className="bg-slate-800 p-6 rounded-lg shadow-lg h-full flex flex-col min-h-[400px]">
+        <div className="bg-black/20 border border-purple-500/10 p-6 rounded-lg shadow-lg h-full flex flex-col min-h-[400px]">
             <div className="flex justify-between items-center mb-4">
-                 <h3 className="text-xl font-bold text-cyan-400">Neighborhood Map</h3>
+                 <div className="flex items-center">
+                    <h3 className="text-xl font-bold text-purple-400">Neighborhood Map</h3>
+                    <Citation title="Data Source" content={dataSource} isDarkTheme={true} />
+                 </div>
                  <InfoTooltip text="An interactive map showing key amenities powered by Google Maps. Pan, zoom, and explore the area." />
             </div>
             <div className="relative flex-grow w-full h-full rounded-lg">
                 {isLoading && (
-                    <div className="absolute inset-0 bg-slate-800/70 flex items-center justify-center z-10">
+                    <div className="absolute inset-0 bg-slate-900/70 flex items-center justify-center z-10">
                         <p className="text-slate-300">Loading map...</p>
                     </div>
                 )}

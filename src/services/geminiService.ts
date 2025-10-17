@@ -29,9 +29,11 @@ const schoolSchema = {
         name: { type: Type.STRING },
         rating: { type: Type.NUMBER, description: "A score out of 10, e.g., 8.5" },
         type: { type: Type.STRING, enum: ['Elementary', 'Middle', 'High'] },
-        distance: { type: Type.STRING, description: "Estimated distance from the target postal code, e.g. '1.2 km'." }
+        distance: { type: Type.STRING, description: "Estimated distance from the target postal code, e.g. '1.2 km'." },
+        address: { type: Type.STRING, description: "The full street address of the school." },
+        city: { type: Type.STRING, description: "The city the school is located in." }
     },
-    required: ['name', 'rating', 'type', 'distance']
+    required: ['name', 'rating', 'type', 'distance', 'address', 'city']
 };
 
 
@@ -69,6 +71,7 @@ const analysisSchema = {
         marketAnalysis: {
             type: Type.OBJECT,
             properties: {
+                dataSource: { type: Type.STRING, description: "The primary sources for the market data provided, e.g., 'Local MLS Data, Federal Reserve Economic Data'." },
                 averageHomePrice: {
                     type: Type.ARRAY,
                     description: "Historical and forecasted average home prices for the last 4 and next 2 quarters. The last 2 data points are forecasts. Format is 'YYYY QX'.",
@@ -108,11 +111,21 @@ const analysisSchema = {
                     }
                 }
             },
-            required: ['averageHomePrice', 'marketHealthIndex', 'forecastSummary', 'interestRateForecast', 'inventoryLevels']
+            required: ['dataSource', 'averageHomePrice', 'marketHealthIndex', 'forecastSummary', 'interestRateForecast', 'inventoryLevels']
         },
         locationAnalysis: {
             type: Type.OBJECT,
             properties: {
+                 dataSources: {
+                    type: Type.OBJECT,
+                    description: "The primary sources for the location data.",
+                    properties: {
+                        scores: { type: Type.STRING, description: "e.g., 'U.S. Census Bureau, Local Crime Statistics'" },
+                        schools: { type: Type.STRING, description: "e.g., 'GreatSchools.org, Provincial Education Rankings'" },
+                        amenities: { type: Type.STRING, description: "e.g., 'Google Maps API, OpenStreetMap'" }
+                    },
+                    required: ['scores', 'schools', 'amenities']
+                },
                 scores: {
                     type: Type.OBJECT,
                     properties: {
@@ -155,7 +168,7 @@ const analysisSchema = {
                     items: schoolSchema
                 }
             },
-            required: ['scores', 'overallSummary', 'neighborhoodCoords', 'amenities', 'topSchools']
+            required: ['dataSources', 'scores', 'overallSummary', 'neighborhoodCoords', 'amenities', 'topSchools']
         },
         totalCostOfOwnership: {
             type: Type.OBJECT,
@@ -212,6 +225,17 @@ const analysisSchema = {
                 }
             },
             required: ['breakEvenPoint', 'summary', 'assumptions']
+        },
+        methodology: {
+            type: Type.OBJECT,
+            description: "Brief, high-level explanations of how key calculations are derived.",
+            properties: {
+                readinessScore: { type: Type.STRING, description: "Explanation for the Personal Buying Readiness Score." },
+                affordability: { type: Type.STRING, description: "Explanation for the affordability and max home price calculation." },
+                totalCostOfOwnership: { type: Type.STRING, description: "Explanation for how Total Cost of Ownership is estimated." },
+                breakEvenAnalysis: { type: Type.STRING, description: "Explanation for the Buy vs. Rent Break-Even analysis methodology." }
+            },
+            required: ['readinessScore', 'affordability', 'totalCostOfOwnership', 'breakEvenAnalysis']
         }
     },
     required: [
@@ -221,7 +245,8 @@ const analysisSchema = {
         'locationAnalysis',
         'totalCostOfOwnership',
         'financialAdvice',
-        'breakEvenAnalysis'
+        'breakEvenAnalysis',
+        'methodology'
     ]
 };
 
@@ -242,15 +267,16 @@ function createPrompt(data: UserInput): string {
 
     Your tasks are:
     1.  **Assess Affordability:** Based on their credit score category, calculate their max affordable price, Total Debt Service (TDS) ratio ((monthly housing cost + other monthly debt) / gross monthly income), and estimated monthly costs. Also, calculate the user's home price-to-income ratio (target home price / annual income) and compare it to the average ratio for ${data.city}. Provide recommendations.
-    2.  **Analyze the Local Market:** Research the real estate market for ${data.city}. Provide historical and forecasted data for home prices, interest rates, and inventory. A seller's market is a higher health index, a buyer's is lower.
-    3.  **Evaluate the Location:** Score the area based on key factors like affordability, job market, safety, schools, and local amenities. ${data.workAddress ? `Also, analyze the commute from the target postal code to the work address, providing an estimated time, a score, and a summary.` : ''} **Additionally, provide hyper-local insights:**
+    2.  **Analyze the Local Market:** Research the real estate market for ${data.city}. Provide historical and forecasted data for home prices, interest rates, and inventory. A seller's market is a higher health index, a buyer's is lower. **Cite your primary data sources** (e.g., 'Local MLS Data, Federal Reserve Economic Data').
+    3.  **Evaluate the Location:** Score the area based on key factors like affordability, job market, safety, schools, and local amenities. ${data.workAddress ? `Also, analyze the commute from the target postal code to the work address, providing an estimated time, a score, and a summary.` : ''} **Additionally, provide hyper-local insights and cite your sources for each category:**
         - Find the central latitude and longitude for the neighborhood of postal code ${data.postalCode}.
         - Identify up to 5 key amenities (like grocery stores, parks, hospitals, transit stops) within a short distance. Provide their name, type, and geographic coordinates.
-        - List 3-4 of the best schools nearby. Provide their name, type (Elementary, etc.), a rating out of 10, and their approximate distance from the neighborhood.
+        - List 3-4 of the best schools nearby. Provide their name, type (Elementary, etc.), a rating out of 10, their approximate distance from the neighborhood, and their full street address and city. **Explicitly state the source of your school ratings** (e.g., 'GreatSchools.org', 'Provincial Education Rankings').
     4.  **Calculate Total Cost of Ownership (TCO):** Break down all estimated monthly costs.
     5.  **Calculate Buy vs. Rent Break-Even Point:** Determine the number of years it will take for the financial benefits of owning this home to outweigh the costs of renting a comparable property. To do this, you must make reasonable, localized assumptions for: estimated monthly rent for a comparable property, annual home appreciation rate, annual rent increase rate, one-time buying costs (as a % of home price), and one-time selling costs (as a % of home price). Return the break-even point in years, a summary, and all the assumptions you used.
     6.  **Provide a Readiness Score and Financial Advice:** Give an overall readiness score from 1-10. Offer a clear recommendation, outline pros and cons, and list actionable next steps.
     7.  **Generate Chart Insights:** For each major data visualization, provide a concise, one-sentence summary that explains what the data means for the user specifically.
+    8.  **Explain Methodology:** In the 'methodology' object, provide brief, high-level explanations for how you derive your key calculations (Readiness Score, Affordability, TCO, Break-Even). This is for user transparency.
 
     Return your complete analysis as a single JSON object that conforms to the provided schema. Ensure all numerical values are numbers, not strings.
     Base your analysis on current, realistic market data, interest rates, and local conditions for ${data.city}.

@@ -11,13 +11,13 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 animate-fade-in"
+      className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center z-50 animate-fade-in"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div 
-        className="bg-slate-800 rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto m-4 transform transition-all duration-300 scale-95 opacity-0 animate-scale-in"
+        className="bg-slate-900 border border-purple-500/20 rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto m-4 transform transition-all duration-300 scale-95 opacity-0 animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative p-6">
