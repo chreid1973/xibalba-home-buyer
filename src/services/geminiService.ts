@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
-import type { UserInput, AnalysisResult } from '../types';
+import type { UserInput, AnalysisResult } from './types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -297,7 +298,17 @@ export async function getAIAnalysis(userInput: UserInput): Promise<AnalysisResul
     });
 
     const jsonString = result.text;
-    const analysisResult: AnalysisResult = JSON.parse(jsonString);
+    // We explicitly cast here after parsing, trusting the API conforms to the schema.
+    const partialResult = JSON.parse(jsonString) as Omit<AnalysisResult, 'id' | 'savedAt' | 'userInput'>;
+    
+    // Combine the AI result with the user input and temporary IDs
+    const analysisResult: AnalysisResult = {
+      ...partialResult,
+      userInput: userInput,
+      id: '', // Will be assigned on save
+      savedAt: '', // Will be assigned on save
+    };
+    
     return analysisResult;
   } catch (error) {
     console.error("Error calling Gemini API:", error);

@@ -26,24 +26,81 @@ const LoadingAnalysis: React.FC = () => {
         <div className="flex flex-col items-center justify-center text-center py-20 animate-fade-in">
             <style>
                 {`
-                    @keyframes pulse {
-                        0%, 100% { opacity: 1; transform: scale(1); }
-                        50% { opacity: 0.7; transform: scale(1.05); }
+                    .bar {
+                        transform-box: fill-box;
+                        transform-origin: bottom;
+                        animation-iteration-count: infinite;
+                        animation-timing-function: ease-in-out;
                     }
-                    .animate-pulse-logo {
-                        animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+                    .bar-1 { animation-name: live-data-1; animation-duration: 1.5s; }
+                    .bar-2 { animation-name: live-data-2; animation-duration: 1.8s; animation-delay: -0.5s; }
+                    .bar-3 { animation-name: live-data-3; animation-duration: 1.2s; animation-delay: -0.2s; }
+                    
+                    @keyframes live-data-1 {
+                      0%, 100% { transform: scaleY(0.3); }
+                      50% { transform: scaleY(1); }
                     }
-                    .dot {
-                        animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+                    @keyframes live-data-2 {
+                      0%, 100% { transform: scaleY(0.9); }
+                      50% { transform: scaleY(0.2); }
+                    }
+                    @keyframes live-data-3 {
+                      0%, 100% { transform: scaleY(0.5); }
+                      50% { transform: scaleY(0.8); }
+                    }
+                    
+                    .node {
+                        animation-iteration-count: infinite;
+                        animation-timing-function: ease-in-out;
+                    }
+                    .node-1 { animation: orbit-1 4s infinite; }
+                    .node-2 { animation: orbit-2 4s infinite; animation-delay: -1s; }
+                    .node-3 { animation: orbit-3 4s infinite; animation-delay: -2s; }
+                    .node-4 { animation: orbit-4 4s infinite; animation-delay: -3s; }
+
+                    @keyframes orbit-1 {
+                        0%, 100% { transform: translate(0, 0) scale(1); }
+                        25% { transform: translate(14px, 4px) scale(1.2); }
+                        50% { transform: translate(10px, 14px) scale(0.8); }
+                        75% { transform: translate(-4px, 10px) scale(1.1); }
+                    }
+                     @keyframes orbit-2 {
+                        0%, 100% { transform: translate(0, 0) scale(1); }
+                        25% { transform: translate(-12px, -3px) scale(0.8); }
+                        50% { transform: translate(-8px, 8px) scale(1.2); }
+                        75% { transform: translate(5px, 5px) scale(0.9); }
+                    }
+                     @keyframes orbit-3 {
+                        0%, 100% { transform: translate(0, 0) scale(1); }
+                        25% { transform: translate(12px, -2px) scale(1.1); }
+                        50% { transform: translate(5px, -10px) scale(0.9); }
+                        75% { transform: translate(-10px, -8px) scale(1.2); }
+                    }
+                     @keyframes orbit-4 {
+                        0%, 100% { transform: translate(0, 0) scale(1); }
+                        25% { transform: translate(-15px, -5px) scale(1.2); }
+                        50% { transform: translate(-10px, -12px) scale(0.8); }
+                        75% { transform: translate(5px, -8px) scale(1); }
                     }
                 `}
             </style>
             <div className="relative w-48 h-48 mb-8">
-                <svg width="192" height="192" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-pulse-logo">
+                <svg width="192" height="192" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2L2 7V21H22V7L12 2Z" fill="url(#logo-gradient)"/>
-                    <path d="M7 12H10V15H7V12Z" fill="rgba(26, 26, 61, 0.7)"/>
-                    <path d="M10.5 12H13.5V18H10.5V12Z" fill="rgba(26, 26, 61, 0.7)"/>
-                    <path d="M14 8H17V15H14V8Z" fill="rgba(26, 26, 61, 0.7)"/>
+                    
+                    <g>
+                        <path className="bar bar-1" d="M7 12H10V15H7V12Z" fill="rgba(26, 26, 61, 0.9)"/>
+                        <path className="bar bar-2" d="M10.5 12H13.5V18H10.5V12Z" fill="rgba(26, 26, 61, 0.9)"/>
+                        <path className="bar bar-3" d="M14 8H17V15H14V8Z" fill="rgba(26, 26, 61, 0.9)"/>
+                    </g>
+                    
+                    {/* Orbiting Data Nodes */}
+                    <circle className="node node-1" cx="5" cy="5" r="1.2" fill="#818cf8" />
+                    <circle className="node node-2" cx="19" cy="8" r="1" fill="#c084fc" />
+                    <circle className="node node-3" cx="6" cy="18" r="1.5" fill="#38bdf8" />
+                    <circle className="node node-4" cx="20" cy="16" r="1.2" fill="#a78bfa" />
+
+
                     <defs>
                         <linearGradient id="logo-gradient" x1="2" y1="2" x2="22" y2="21" gradientUnits="userSpaceOnUse">
                             <stop stopColor="#a855f7"/>
@@ -51,12 +108,6 @@ const LoadingAnalysis: React.FC = () => {
                         </linearGradient>
                     </defs>
                 </svg>
-                {/* Animated data nodes */}
-                <div className="absolute top-4 left-4 w-3 h-3 bg-purple-400 rounded-full dot" style={{ animationDelay: '0.2s' }}></div>
-                <div className="absolute top-1/2 -left-2 w-3 h-3 bg-blue-400 rounded-full dot" style={{ animationDelay: '0.4s' }}></div>
-                <div className="absolute bottom-4 right-4 w-3 h-3 bg-purple-400 rounded-full dot" style={{ animationDelay: '0.6s' }}></div>
-                <div className="absolute -top-2 left-1/2 w-3 h-3 bg-blue-400 rounded-full dot" style={{ animationDelay: '0.8s' }}></div>
-                <div className="absolute bottom-1/2 -right-2 w-3 h-3 bg-purple-400 rounded-full dot" style={{ animationDelay: '1s' }}></div>
             </div>
 
             <h2 className="text-3xl font-extrabold text-white mb-4 tracking-tight">

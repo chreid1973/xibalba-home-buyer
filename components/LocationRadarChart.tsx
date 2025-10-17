@@ -1,6 +1,6 @@
 import React from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
-import type { LocationAnalysis } from '../types';
+import type { LocationAnalysis } from '../src/types';
 import InfoTooltip from './InfoTooltip';
 import Citation from './Citation';
 
@@ -21,17 +21,17 @@ const LocationRadarChart: React.FC<LocationRadarChartProps> = ({ scores, dataSou
   return (
     <div className="flex flex-col flex-grow h-full">
        <div className="flex justify-center items-center">
-            <h3 className="font-bold text-center text-slate-700">Location Attractiveness</h3>
+            <h3 className="font-bold text-center text-purple-400">Location Attractiveness</h3>
             <InfoTooltip text="Scores (1-10) for key location factors. Higher scores are better. This helps you understand the pros and cons of the neighborhood at a glance." />
-            <Citation title="Data Source" content={dataSource} />
+            <Citation title="Data Source" content={dataSource} isDarkTheme={true} />
         </div>
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-          <PolarGrid stroke="#d1d5db" />
-          <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 12 }} />
+          <PolarGrid stroke="rgba(168, 85, 247, 0.2)" />
+          <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
           <PolarRadiusAxis angle={30} domain={[0, 10]} tick={false} axisLine={false} />
           <Radar name="Score" dataKey="score" stroke="#a855f7" fill="#a855f7" fillOpacity={0.6} />
-          <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }} />
+          <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #a855f7', borderRadius: '0.5rem' }} />
         </RadarChart>
       </ResponsiveContainer>
     </div>

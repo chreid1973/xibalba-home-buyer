@@ -1,11 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
+import type { User } from '../src/types';
+import UserMenu from './UserMenu';
 
 interface HeaderProps {
   showNewAnalysisButton: boolean;
   onNewAnalysis: () => void;
+  currentUser: User | null;
+  onShowAuth: () => void;
+  onLogout: () => void;
+  onShowDashboard: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ showNewAnalysisButton, onNewAnalysis }) => {
+const Header: React.FC<HeaderProps> = ({ showNewAnalysisButton, onNewAnalysis, currentUser, onShowAuth, onLogout, onShowDashboard }) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -36,14 +43,30 @@ const Header: React.FC<HeaderProps> = ({ showNewAnalysisButton, onNewAnalysis })
             Property <span className="text-purple-400">Scout</span>
           </h1>
         </div>
-        {showNewAnalysisButton && (
-           <button 
-            onClick={onNewAnalysis} 
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-md text-sm transition-all duration-200 transform hover:scale-105 shadow-lg shadow-purple-500/20"
-          >
-            Start New Analysis
-          </button>
-        )}
+        <div className="flex items-center space-x-4">
+          {showNewAnalysisButton && (
+             <button 
+              onClick={onNewAnalysis} 
+              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-md text-sm transition-all duration-200 transform hover:scale-105 shadow-lg shadow-purple-500/20 hidden sm:block"
+            >
+              Start New Analysis
+            </button>
+          )}
+          {currentUser ? (
+            <UserMenu 
+              userEmail={currentUser.email} 
+              onLogout={onLogout} 
+              onShowDashboard={onShowDashboard}
+            />
+          ) : (
+            <button 
+              onClick={onShowAuth}
+              className="border border-purple-500 text-purple-300 hover:bg-purple-500/20 hover:text-white font-semibold py-2 px-4 rounded-md text-sm transition-all duration-200"
+            >
+              Login / Sign Up
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );

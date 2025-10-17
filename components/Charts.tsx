@@ -1,84 +1,62 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
-import type { MarketData } from '../types';
-import InfoTooltip from './InfoTooltip';
-import Citation from './Citation';
+import type { MarketData } from '../src/types';
+import TrendChart from './TrendChart';
 
-interface MarketForecastChartProps {
+interface ChartsProps {
   marketData: MarketData;
-  tooltipText?: string;
-  dataSource?: string;
+  insights: {
+    homePriceForecast: string;
+    interestRateForecast: string;
+    inventoryLevels: string;
+  };
 }
 
-const currencyFormatter = (value: number) => {
-    if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
-    return `$${value}`;
-};
+const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0, notation: 'compact' });
+const percentFormatter = (value: number) => `${value.toFixed(2)}%`;
+const numberFormatter = (value: number) => new Intl.NumberFormat('en-US', { notation: 'compact' }).format(value);
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white p-2 border border-slate-200 rounded shadow-lg">
-        <p className="label text-sm font-bold text-slate-700">{`${label}`}</p>
-        <p className="intro text-sm text-purple-600">{`Price : ${currencyFormatter(payload[0].value)}`}</p>
-      </div>
-    );
-  }
-  return null;
-};
-
-const MarketForecastChart: React.FC<MarketForecastChartProps> = ({ marketData, tooltipText, dataSource }) => {
-  if (!marketData || !marketData.averageHomePrice || marketData.averageHomePrice.length === 0) {
-    return null;
-  }
-
-  const chartData = marketData.averageHomePrice;
-  const forecastStartIndex = Math.max(0, chartData.length - 2);
-  const forecastStartQuarter = chartData[forecastStartIndex]?.quarter;
-
-  const historicalData = chartData.slice(0, forecastStartIndex + 1);
-
+const Charts: React.FC<ChartsProps> = ({ marketData, insights }) => {
   return (
-    <div className="flex flex-col flex-grow h-full">
-        <div className="flex justify-center items-center mb-2">
-            <h3 className="font-bold text-center text-slate-700">Average Home Price Forecast</h3>
-            {tooltipText && <InfoTooltip text={tooltipText} />}
-            {dataSource && <Citation title="Data Source" content={dataSource} />}
-        </div>
-        <div className="flex-grow h-full">
-            <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="quarter" stroke="#64748b" fontSize={12} />
-                <YAxis stroke="#64748b" fontSize={12} tickFormatter={currencyFormatter} />
-                <Tooltip content={<CustomTooltip />} />
-                
-                {/* Historical Data Line */}
-                <Line data={historicalData} type="monotone" dataKey="price" name="Historical Price" stroke="#8b5cf6" strokeWidth={3} activeDot={{ r: 8 }} dot={false} />
-                
-                {/* Forecast Data Line */}
-                <Line dataKey="price" name="Forecast Price" stroke="#8b5cf6" strokeWidth={3} strokeDasharray="5 5" activeDot={{ r: 8 }} dot={false}/>
-
-                {forecastStartQuarter && <ReferenceLine x={forecastStartQuarter} stroke="#94a3b8" strokeDasharray="3 3" />}
-                
-                 <Legend verticalAlign="bottom" height={36} content={() => (
-                     <div className="flex justify-center items-center gap-6 text-sm text-slate-500 mt-4">
-                        <div className="flex items-center gap-2">
-                             <svg className="w-4 h-1" viewBox="0 0 16 4"><path d="M0 2 H16" stroke="#8b5cf6" strokeWidth="3" /></svg>
-                            <span>Historical</span>
-                        </div>
-                         <div className="flex items-center gap-2">
-                             <svg className="w-4 h-1" viewBox="0 0 16 4"><path d="M0 2 H16" stroke="#8b5cf6" strokeWidth="3" strokeDasharray="5 5" /></svg>
-                            <span>Forecast</span>
-                        </div>
-                    </div>
-                 )} />
-
-            </LineChart>
-            </ResponsiveContainer>
-        </div>
+    <div className="grid md:grid-cols-3 gap-6">
+      <div className="bg-black/20 border border-purple-500/10 p-4 rounded-lg shadow-lg">
+        <TrendChart
+          data={marketData.averageHomePrice}
+          dataKey="price"
+          xAxisKey="quarter"
+          title="Average Home Price"
+          tooltipText={insights.homePriceForecast}
+          dataSource={marketData.dataSource}
+          color="#a855f7"
+          formatter={(val) => currencyFormatter.format(val)}
+        />
+      </div>
+      <div className="bg-black/20 border border-purple-500/10 p-4 rounded-lg shadow-lg">
+        <TrendChart
+          data={marketData.interestRateForecast}
+          dataKey="rate"
+          xAxisKey="quarter"
+          title="Interest Rate Forecast"
+          tooltipText={insights.interestRateForecast}
+          dataSource={marketData.dataSource}
+          color="#3b82f6"
+          formatter={percentFormatter}
+        />
+      </div>
+      <div className="bg-black/20 border border-purple-500/10 p-4 rounded-lg shadow-lg">
+        <TrendChart
+          data={marketData.inventoryLevels}
+          dataKey="level"
+          xAxisKey="quarter"
+          title="Housing Inventory Levels"
+          tooltipText={insights.inventoryLevels}
+          dataSource={marketData.dataSource}
+          color="#10b981"
+          chartType="bar"
+          formatter={numberFormatter}
+        />
+      </div>
     </div>
   );
 };
 
-export default MarketForecastChart;
+export default Charts;

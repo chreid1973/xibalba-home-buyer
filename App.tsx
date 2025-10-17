@@ -1,7 +1,9 @@
 
-import React, { useState } from 'react';
-import type { UserInput, AnalysisResult } from './src/types';
+import React, { useState, useEffect } from 'react';
+import type { UserInput, AnalysisResult, User } from './src/types';
 import { getAIAnalysis } from './src/services/geminiService';
+import { authService } from './src/services/authService';
+import { analysisService } from './src/services/analysisService';
 
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -9,37 +11,98 @@ import InputForm from './components/InputForm';
 import Results from './components/Results';
 import Footer from './components/Footer';
 import LoadingAnalysis from './components/LoadingAnalysis';
+import Auth from './components/Auth';
+import Dashboard from './components/Dashboard';
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'hero' | 'form' | 'loading' | 'results'>('hero');
-  const [userInput, setUserInput] = useState<UserInput | null>(null);
+  const [view, setView] = useState<'hero' | 'form' | 'loading' | 'results' | 'dashboard'>('hero');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [savedAnalyses, setSavedAnalyses] = useState<AnalysisResult[]>([]);
 
-  const handleStartAnalysis = () => setView('form');
+  useEffect(() => {
+    const user = authService.getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+      fetchAnalyses(user);
+    }
+  }, []);
+  
+  const fetchAnalyses = async (user: User) => {
+    const analyses = await analysisService.getAnalysesForUser(user);
+    setSavedAnalyses(analyses);
+  };
+
+  const handleStartAnalysis = () => {
+    setView('form');
+    setAnalysisResult(null);
+    setError(null);
+  };
 
   const handleNewAnalysis = () => {
     setView('form');
     setAnalysisResult(null);
-    setUserInput(null);
     setError(null);
   };
 
   const handleAnalyze = async (data: UserInput) => {
-    setUserInput(data);
     setView('loading');
     setError(null);
 
     try {
       const result = await getAIAnalysis(data);
       setAnalysisResult(result);
+      setView('results');
     } catch (e) {
       console.error(e);
       const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
       setError(`An error occurred while analyzing your data. Please try again. Details: ${errorMessage}`);
-    } finally {
       setView('results');
     }
+  };
+
+  const handleLoginSuccess = (user: User) => {
+    setCurrentUser(user);
+    setIsAuthModalOpen(false);
+    fetchAnalyses(user);
+    if(view === 'hero') {
+      setView('dashboard');
+    }
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
+    setSavedAnalyses([]);
+    setView('hero');
+  };
+
+  const handleShowDashboard = () => {
+    if(currentUser) {
+        fetchAnalyses(currentUser);
+        setView('dashboard');
+    }
+  };
+
+  const handleViewAnalysis = (analysis: AnalysisResult) => {
+    setAnalysisResult(analysis);
+    setView('results');
+  };
+
+  const handleDeleteAnalysis = async (analysisId: string) => {
+    if (currentUser) {
+      await analysisService.deleteAnalysis(currentUser, analysisId);
+      fetchAnalyses(currentUser); // Refresh list
+    }
+  };
+
+  const handleSaveAnalysis = async (result: AnalysisResult) => {
+      if (currentUser) {
+          await analysisService.saveAnalysis(currentUser, result);
+          await fetchAnalyses(currentUser);
+      }
   };
   
   const renderContent = () => {
@@ -51,7 +114,6 @@ const App: React.FC = () => {
            <div className="max-w-4xl mx-auto animate-fade-in">
              <div className="grid md:grid-cols-2 gap-8 items-start">
                 <div className="md:col-span-1">
-                    {/* Fix: This comparison was causing a TypeScript error because `view` is always 'form' in this branch. Given the app transitions to a full-screen loader, the button's loading state is not used. */}
                     <InputForm onAnalyze={handleAnalyze} isLoading={false} />
                 </div>
                 <div className="md:col-span-1 text-slate-300 p-6 bg-black/20 border border-purple-500/20 rounded-lg hidden md:block">
@@ -72,7 +134,20 @@ const App: React.FC = () => {
       case 'loading':
           return <LoadingAnalysis />;
       case 'results':
-        return <Results error={error} result={analysisResult} userInput={userInput} />;
+        return <Results 
+                    error={error} 
+                    result={analysisResult}
+                    currentUser={currentUser}
+                    onSave={handleSaveAnalysis}
+                    isSaved={!!analysisResult?.id}
+                />;
+      case 'dashboard':
+        return <Dashboard 
+                 analyses={savedAnalyses}
+                 onView={handleViewAnalysis}
+                 onDelete={handleDeleteAnalysis}
+                 onNewAnalysis={handleNewAnalysis}
+               />;
       default:
         return <Hero onStartAnalysis={handleStartAnalysis} />;
     }
@@ -80,11 +155,24 @@ const App: React.FC = () => {
 
   return (
     <div className="bg-transparent text-white min-h-screen font-sans antialiased">
-      <Header showNewAnalysisButton={view === 'results'} onNewAnalysis={handleNewAnalysis} />
+      <Header 
+        showNewAnalysisButton={view === 'results' || view === 'dashboard'} 
+        onNewAnalysis={handleNewAnalysis}
+        currentUser={currentUser}
+        onShowAuth={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
+        onShowDashboard={handleShowDashboard}
+      />
       <main className="container mx-auto px-4 py-8">
         {renderContent()}
       </main>
       <Footer />
+      <Auth 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+        onSignupSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }

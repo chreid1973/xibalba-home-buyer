@@ -1,3 +1,8 @@
+
+export interface User {
+  email: string;
+}
+
 export interface UserInput {
   income: number;
   downPayment: number;
@@ -128,6 +133,9 @@ export interface Methodology {
 }
 
 export interface AnalysisResult {
+  id: string; // Unique identifier for the analysis
+  savedAt: string; // ISO string of when it was saved
+  userInput: UserInput; // Storing the original input with the result
   personalBuyingReadinessScore: number;
   affordability: AffordabilityAnalysis;
   marketAnalysis: MarketData;

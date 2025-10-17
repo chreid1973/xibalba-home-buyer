@@ -1,61 +1,57 @@
 import React from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
 import InfoTooltip from './InfoTooltip';
+import Citation from './Citation';
 
 interface TrendChartProps {
-  data: { [key: string]: string | number }[];
+  data: any[];
   dataKey: string;
   xAxisKey: string;
   title: string;
-  formatter: (value: number) => string;
-  tooltipText?: string;
+  tooltipText: string;
+  dataSource: string;
+  color: string;
+  formatter?: (value: number) => string;
+  chartType?: 'line' | 'area' | 'bar';
 }
 
 const CustomTooltip = ({ active, payload, label, formatter }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-2 border border-slate-200 rounded shadow-lg text-sm">
-          <p className="font-bold text-slate-700">{label}</p>
-          <p className="text-purple-600">{formatter(payload[0].value)}</p>
-        </div>
-      );
-    }
-    return null;
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-800 p-2 border border-purple-500/50 rounded-md text-sm">
+        <p className="label text-slate-300">{`${label}`}</p>
+        <p className="intro text-white font-semibold">{`${payload[0].name} : ${formatter ? formatter(payload[0].value) : payload[0].value}`}</p>
+      </div>
+    );
+  }
+  return null;
 };
 
-
-const TrendChart: React.FC<TrendChartProps> = ({ data, dataKey, xAxisKey, title, formatter, tooltipText }) => {
-    if (!data || data.length === 0) {
-        return (
-            <div className="flex flex-col justify-center items-center h-full">
-                <h4 className="font-semibold text-slate-600 text-center text-sm mb-2">{title}</h4>
-                <p className="text-slate-400 text-xs">Data not available</p>
-            </div>
-        )
-    }
+const TrendChart: React.FC<TrendChartProps> = ({ data, dataKey, xAxisKey, title, tooltipText, dataSource, color, formatter = (val) => String(val), chartType = 'area' }) => {
+  
+  const ChartComponent = chartType === 'bar' ? BarChart : (chartType === 'area' ? AreaChart : LineChart);
+  const ChartElement = chartType === 'bar' ? Bar : (chartType === 'area' ? Area : Line);
+  
   return (
-    <div className="flex flex-col flex-grow h-full">
-      <div className="flex justify-center items-center mb-2">
-        <h4 className="font-semibold text-slate-600 text-center text-sm">{title}</h4>
-        {tooltipText && <InfoTooltip text={tooltipText} />}
+    <div className="h-full flex flex-col">
+      <div className="flex justify-center items-center">
+        <h3 className="font-bold text-center text-purple-400">{title}</h3>
+        <InfoTooltip text={tooltipText} />
+        <Citation title="Data Source" content={dataSource} isDarkTheme={true}/>
       </div>
-      <div className="flex-grow">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 5, right: 20, left: -25, bottom: 5 }}>
-                <defs>
-                    <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
-                    </linearGradient>
-                </defs>
-                <XAxis dataKey={xAxisKey} stroke="#94a3b8" fontSize={11} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={formatter} domain={['dataMin - 1', 'dataMax + 1']} />
-                <Tooltip content={<CustomTooltip formatter={formatter} />} />
-                <Area type="monotone" dataKey={dataKey} stroke="#a855f7" fillOpacity={1} fill="url(#colorTrend)" />
-            </AreaChart>
-          </ResponsiveContainer>
+      <div className="flex-grow w-full h-48">
+        <ResponsiveContainer width="100%" height="100%">
+          <ChartComponent data={data} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(168, 85, 247, 0.1)" />
+            <XAxis dataKey={xAxisKey} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+            <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={formatter} domain={['dataMin', 'dataMax']} />
+            <Tooltip content={<CustomTooltip formatter={formatter} />} />
+            <ChartElement type="monotone" dataKey={dataKey} name={title} stroke={color} fill={color} fillOpacity={0.2} />
+          </ChartComponent>
+        </ResponsiveContainer>
       </div>
     </div>
   );
 };
+
 export default TrendChart;

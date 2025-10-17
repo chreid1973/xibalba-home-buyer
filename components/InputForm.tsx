@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { UserInput } from '../types';
+import type { UserInput } from '../src/types';
 
 interface InputFormProps {
   onAnalyze: (data: UserInput) => void;
