@@ -70,6 +70,7 @@ export interface LocationAnalysis {
     amenities: ScoreDetail;
   };
   overallSummary: string;
+  overallLocationScore: number; // A single score from 1-10 representing the location's overall quality.
   commuteAnalysis?: {
     time: number;
     score: number;

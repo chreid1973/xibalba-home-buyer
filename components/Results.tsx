@@ -18,6 +18,7 @@ import ScenarioSimulator from './ScenarioSimulator';
 import BreakEvenAnalysis from './BreakEvenAnalysis';
 import Modal from './Modal';
 import Citation from './Citation';
+import VerdictExplainer from './VerdictExplainer';
 
 // Import calculation utility
 // Fix: Import from the newly created utility file and correct path
@@ -60,7 +61,7 @@ const Results: React.FC<ResultsProps> = ({ error, result, userInput }) => {
     } | null>(null);
 
     // State for the modal
-    const [isMapModalOpen, setMapModalOpen] = useState(false);
+    const [isVerdictModalOpen, setVerdictModalOpen] = useState(false);
     
     // Derived state for display, based on original result or simulated data
     const [displayData, setDisplayData] = useState<AnalysisResult | null>(result);
@@ -105,6 +106,7 @@ const Results: React.FC<ResultsProps> = ({ error, result, userInput }) => {
             newDisplayData.totalCostOfOwnership.estimatedUtilities +
             newDisplayData.totalCostOfOwnership.estimatedMaintenance;
         
+        // Fix: Corrected typo from `newNewDisplayData` to `newDisplayData`.
         newDisplayData.affordability.monthlyPITH = monthlyMortgage + newDisplayData.totalCostOfOwnership.estimatedTaxes + newDisplayData.totalCostOfOwnership.estimatedInsurance;
         
         // Recalculate readiness score based on how simulated price compares to max affordable price
@@ -171,7 +173,19 @@ const Results: React.FC<ResultsProps> = ({ error, result, userInput }) => {
         <div className="animate-fade-in space-y-8">
             {/* Header Summary */}
             <header className="bg-black/20 border border-purple-500/20 p-6 rounded-lg text-center shadow-lg">
-                <p className="text-purple-400 font-semibold">Overall Recommendation</p>
+                <div className="flex justify-center items-center mb-2">
+                    <p className="text-purple-400 font-semibold">Overall Recommendation</p>
+                     <button 
+                        onClick={() => setVerdictModalOpen(true)} 
+                        className="ml-2 text-slate-400 hover:text-white transition-colors" 
+                        aria-label="How is this determined?"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+
                 <h2 className="text-4xl font-extrabold text-white my-2">{financialAdvice.overallRecommendation}</h2>
                 <p className="text-slate-300 max-w-3xl mx-auto">{financialAdvice.chartInsights.readinessGauge}</p>
             </header>
@@ -271,11 +285,15 @@ const Results: React.FC<ResultsProps> = ({ error, result, userInput }) => {
 
             </div>
 
-            <Modal isOpen={isMapModalOpen} onClose={() => setMapModalOpen(false)}>
-                 <div className="h-[80vh] w-full">
-                    <NeighborhoodMap center={locationAnalysis.neighborhoodCoords} amenities={locationAnalysis.amenities} dataSource={locationAnalysis.dataSources.amenities} />
-                 </div>
-            </Modal>
+            <VerdictExplainer
+                isOpen={isVerdictModalOpen}
+                onClose={() => setVerdictModalOpen(false)}
+                readinessScore={personalBuyingReadinessScore}
+                marketHealthIndex={marketAnalysis.marketHealthIndex}
+                marketForecast={marketAnalysis.forecastSummary}
+                locationScore={locationAnalysis.overallLocationScore}
+                locationSummary={locationAnalysis.overallSummary}
+            />
         </div>
     );
 };

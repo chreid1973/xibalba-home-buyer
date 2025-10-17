@@ -138,6 +138,7 @@ const analysisSchema = {
                     required: ['affordability', 'jobMarket', 'safety', 'schools', 'amenities']
                 },
                 overallSummary: { type: Type.STRING, description: "A 2-3 sentence summary of the location's pros and cons for the user." },
+                overallLocationScore: { type: Type.NUMBER, description: "A single, weighted score from 1-10 representing the location's overall quality based on the individual scores." },
                 commuteAnalysis: {
                     type: Type.OBJECT,
                     description: "An analysis of the user's potential commute. Only include if a work address is provided.",
@@ -168,7 +169,7 @@ const analysisSchema = {
                     items: schoolSchema
                 }
             },
-            required: ['dataSources', 'scores', 'overallSummary', 'neighborhoodCoords', 'amenities', 'topSchools']
+            required: ['dataSources', 'scores', 'overallSummary', 'overallLocationScore', 'neighborhoodCoords', 'amenities', 'topSchools']
         },
         totalCostOfOwnership: {
             type: Type.OBJECT,
@@ -268,7 +269,7 @@ function createPrompt(data: UserInput): string {
     Your tasks are:
     1.  **Assess Affordability:** Based on their credit score category, calculate their max affordable price, Total Debt Service (TDS) ratio ((monthly housing cost + other monthly debt) / gross monthly income), and estimated monthly costs. Also, calculate the user's home price-to-income ratio (target home price / annual income) and compare it to the average ratio for ${data.city}. Provide recommendations.
     2.  **Analyze the Local Market:** Research the real estate market for ${data.city}. Provide historical and forecasted data for home prices, interest rates, and inventory. A seller's market is a higher health index, a buyer's is lower. **Cite your primary data sources** (e.g., 'Local MLS Data, Federal Reserve Economic Data').
-    3.  **Evaluate the Location:** Score the area based on key factors like affordability, job market, safety, schools, and local amenities. ${data.workAddress ? `Also, analyze the commute from the target postal code to the work address, providing an estimated time, a score, and a summary.` : ''} **Additionally, provide hyper-local insights and cite your sources for each category:**
+    3.  **Evaluate the Location:** Score the area based on key factors like affordability, job market, safety, schools, and local amenities. Calculate a single, weighted 'overallLocationScore' from 1-10 based on these individual scores. ${data.workAddress ? `Also, analyze the commute from the target postal code to the work address, providing an estimated time, a score, and a summary.` : ''} **Additionally, provide hyper-local insights and cite your sources for each category:**
         - Find the central latitude and longitude for the neighborhood of postal code ${data.postalCode}.
         - Identify up to 5 key amenities (like grocery stores, parks, hospitals, transit stops) within a short distance. Provide their name, type, and geographic coordinates.
         - List 3-4 of the best schools nearby. Provide their name, type (Elementary, etc.), a rating out of 10, their approximate distance from the neighborhood, and their full street address and city. **Explicitly state the source of your school ratings** (e.g., 'GreatSchools.org', 'Provincial Education Rankings').
